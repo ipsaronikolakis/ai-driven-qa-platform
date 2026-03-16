@@ -166,7 +166,7 @@ app.get('/api/output/*path', (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 
 app.post('/api/run', (req: Request, res: Response) => {
-	const { fresh } = req.body as { fresh?: boolean }
+	const { fresh, targets } = req.body as { fresh?: boolean; targets?: string[] }
 
 	res.setHeader('Content-Type', 'text/event-stream')
 	res.setHeader('Cache-Control', 'no-cache')
@@ -178,7 +178,12 @@ app.post('/api/run', (req: Request, res: Response) => {
 	}
 
 	const script = fresh ? 'fresh' : 'pipeline'
-	const proc = child_process.spawn('npm', ['run', script], {
+	const npmArgs = ['run', script]
+	if (targets && targets.length > 0) {
+		// npm run <script> -- --only=file1.feature,file2.feature
+		npmArgs.push('--', `--only=${targets.join(',')}`)
+	}
+	const proc = child_process.spawn('npm', npmArgs, {
 		cwd: ROOT_DIR,
 		env: { ...process.env },
 		shell: true,

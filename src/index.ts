@@ -26,9 +26,12 @@ const LINT_LOG_PATH  = path.resolve(OUTPUT_DIR, 'lint-log.ndjson')
 
 async function main(): Promise<void> {
 	const isFresh = process.argv.includes('--fresh')
+	const onlyArg = process.argv.find(a => a.startsWith('--only='))
+	const onlyFiles = onlyArg ? onlyArg.slice('--only='.length).split(',').map(f => f.trim()) : null
 	console.log('='.repeat(60))
 	console.log('AI-Driven QA Platform — Pipeline')
 	if (isFresh) console.log('(--fresh: all caches bypassed)')
+	if (onlyFiles) console.log(`(--only: ${onlyFiles.join(', ')})`)
 	console.log('='.repeat(60))
 
 	const apiKey = process.env.GEMINI_API_KEY
@@ -43,9 +46,14 @@ async function main(): Promise<void> {
 
 	const featureFiles = fs.readdirSync(SCENARIOS_DIR)
 		.filter(f => f.endsWith('.feature'))
+		.filter(f => !onlyFiles || onlyFiles.includes(f))
 		.map(f => path.join(SCENARIOS_DIR, f))
 
-	if (featureFiles.length === 0) throw new Error(`No .feature files found in ${SCENARIOS_DIR}`)
+	if (featureFiles.length === 0) throw new Error(
+		onlyFiles
+			? `No matching .feature files found for --only=${onlyFiles.join(',')}`
+			: `No .feature files found in ${SCENARIOS_DIR}`
+	)
 
 	const allScenarios: Array<{ scenario: ReturnType<typeof parseAllScenarios>[0]; featureFile: string }> = []
 

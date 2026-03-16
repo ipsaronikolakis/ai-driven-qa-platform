@@ -140,11 +140,11 @@ app.get('/api/output', (_req: Request, res: Response) => {
 })
 
 // ---------------------------------------------------------------------------
-// GET /api/output/* — read an output artifact
+// GET /api/output/*path — read an output artifact
 // ---------------------------------------------------------------------------
 
-app.get('/api/output/*', (req: Request, res: Response) => {
-	const rel = (req.params as Record<string, string>)['0'] ?? ''
+app.get('/api/output/*path', (req: Request, res: Response) => {
+	const rel = String(req.params['path'] ?? '')
 	const filePath = path.resolve(OUTPUT_DIR, rel)
 	// Safety: ensure path stays inside OUTPUT_DIR
 	if (!filePath.startsWith(OUTPUT_DIR + path.sep) && filePath !== OUTPUT_DIR) {

@@ -1,0 +1,89 @@
+version: 1.1.0
+
+# Core vocabulary for the AI-Driven QA Platform.
+#
+# Each entry defines a canonical step template and maps it to an action or
+# assertion helper name. Templates use {param} placeholders for variable parts.
+#
+# How to propose a new term:
+#   1. Open a PR adding the term here with at least one example scenario.
+#   2. Get at least one reviewer to approve.
+#   3. Bump the patch version in the `version:` field.
+#
+# Version history:
+#   1.0.0 — Initial core vocabulary: 5 actions, 3 assertions
+#   1.1.0 — Added page-navigation assertion and individual field entry actions
+#           (evidence: login.feature bootstrapping run 2026-03-16)
+
+actions:
+  - name: "login as {role}"
+    maps_to: loginAs
+    description: "Log in to the application using the given role's credentials."
+    params:
+      role: [admin, learner, instructor, user, tomsmith]
+
+  - name: "navigate to {url}"
+    maps_to: navigateTo
+    description: "Navigate the browser to the given URL or path."
+    params:
+      url: string
+
+  - name: "click {element}"
+    maps_to: clickElement
+    description: "Click an interactive element identified by its label or name."
+    params:
+      element: string
+
+  - name: "fill {field} with {value}"
+    maps_to: fillInput
+    description: "Type a value into a form field."
+    params:
+      field: string
+      value: string
+
+  - name: "log out"
+    maps_to: logout
+    description: "Log out of the application."
+
+  - name: "enter username {value}"
+    maps_to: fillUsername
+    description: "Type a value into the username field."
+    params:
+      value: string
+
+  - name: "enter password {value}"
+    maps_to: fillPassword
+    description: "Type a value into the password field."
+    params:
+      value: string
+
+  - name: "click the {element} button"
+    maps_to: clickButton
+    description: "Click a button identified by its label."
+    params:
+      element: string
+
+assertions:
+  - name: "I am on the {page} page"
+    maps_to: assertOnPage
+    description: "Assert that the current page matches the given page name or URL."
+    params:
+      page: string
+
+  - name: "I should see {text}"
+    maps_to: assertText
+    description: "Assert that the given text is visible anywhere on the page."
+    params:
+      text: string
+
+  - name: "I should be on {url}"
+    maps_to: assertUrl
+    description: "Assert that the current URL contains the given path or URL."
+    params:
+      url: string
+
+  - name: "I should see the {element} button"
+    maps_to: assertVisible
+    description: "Assert that a named button is visible on the page."
+    params:
+      element: string

@@ -1,0 +1,129 @@
+name: QA Pipeline
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:  # allows manual runs from the GitHub Actions UI
+
+jobs:
+  # ── Job 1: Unit tests (fast, no browser network calls) ──────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+  # ── Job 2: Full pipeline (exploration → planning → codegen → execution) ─
+  pipeline:
+    name: QA Pipeline
+    runs-on: ubuntu-latest
+    needs: unit-tests   # only run if unit tests pass
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint BDD scenarios
+        run: npm run lint:scenarios
+
+      - name: Run QA pipeline
+        id: pipeline
+        env:
+          # GEMINI_API_KEY is optional — all current scenarios are vocabulary-
+          # resolvable and bypass Gemini entirely. Set this secret in your repo
+          # settings if you add scenarios that require LLM fallback.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npm run fresh
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload failure analysis
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-analysis
+          path: output/failure-analysis.json
+          retention-days: 30
+
+      - name: Post PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            let body = '## QA Pipeline Results\n\n';
+
+            try {
+              const report = JSON.parse(fs.readFileSync('output/playwright-results.json', 'utf-8'));
+              const stats = report.stats ?? {};
+              const passed  = stats.expected   ?? 0;
+              const failed  = stats.unexpected ?? 0;
+              const skipped = stats.skipped    ?? 0;
+              const total   = passed + failed + skipped;
+              const status  = failed === 0 ? '✅ PASSED' : '❌ FAILED';
+
+              body += `**Status:** ${status}\n\n`;
+              body += `| | Count |\n|---|---|\n`;
+              body += `| Total | ${total} |\n`;
+              body += `| ✅ Passed | ${passed} |\n`;
+              body += `| ❌ Failed | ${failed} |\n`;
+              if (skipped > 0) body += `| ⏭ Skipped | ${skipped} |\n`;
+
+              if (failed > 0) {
+                try {
+                  const analysis = JSON.parse(fs.readFileSync('output/failure-analysis.json', 'utf-8'));
+                  body += '\n### Failure Analysis\n\n';
+                  for (const f of analysis.failures) {
+                    body += `- **[${f.category}]** \`${f.test}\`\n`;
+                    body += `  - Error: ${f.errorSummary}\n`;
+                    body += `  - 💡 ${f.suggestion}\n`;
+                  }
+                } catch { /* analysis file may not exist */ }
+              }
+            } catch {
+              body += '_Could not read pipeline results — check the [workflow logs](' + runUrl + ')._\n';
+            }
+
+            body += `\n[📊 View full report](${runUrl})`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

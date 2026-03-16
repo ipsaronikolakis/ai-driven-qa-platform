@@ -1,0 +1,8 @@
+node_modules/
+dist/
+generated/
+.env
+playwright-report/
+test-results/
+output/
+.claude/

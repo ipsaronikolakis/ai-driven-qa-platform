@@ -1,0 +1,26 @@
+{
+  "name": "ai-driven-qa-platform",
+  "version": "1.0.0",
+  "description": "AI-driven QA platform PoC: BDD -> Playwright exploration -> Gemini planning -> code generation -> execution",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "pipeline": "ts-node src/index.ts",
+    "fresh": "ts-node src/index.ts --fresh",
+    "lint:scenarios": "ts-node src/vocabulary/lint-cli.ts",
+    "test:unit": "npx playwright test src/bdd-parser/__tests__ src/vocabulary/__tests__ src/planner/__tests__ src/code-generator/__tests__ src/analyzer/__tests__ src/app-explorer/__tests__",
+    "test:integration": "npx playwright test src/actions/__tests__/actions.spec.ts src/actions/__tests__/classifier-verify.spec.ts",
+    "test": "npm run test:unit && npm run test:integration"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.5",
+    "js-yaml": "^4.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.13.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

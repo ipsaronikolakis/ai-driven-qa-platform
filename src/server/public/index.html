@@ -189,6 +189,10 @@
 				border-top: 1px solid #313244;
 				display: flex;
 				flex-direction: column;
+				transition: height 0.2s ease;
+			}
+			.bottom-panel.report-open {
+				height: 60vh;
 			}
 
 			.tabs {
@@ -226,6 +230,17 @@
 			}
 			.tab-pane.active {
 				display: block;
+			}
+			/* Report iframe fills the whole tab-content area */
+			#tab-report {
+				padding: 0;
+				height: 100%;
+			}
+			#report-frame {
+				width: 100%;
+				height: 100%;
+				border: none;
+				background: #fff;
 			}
 
 			table {
@@ -316,6 +331,7 @@
 				</button>
 				<button class="tab-btn" data-tab="proposals">Heal Proposals</button>
 				<button class="tab-btn" data-tab="lint-output">Lint Output</button>
+				<button class="tab-btn" data-tab="report" id="tab-btn-report">Report</button>
 			</div>
 			<div class="tab-content">
 				<div class="tab-pane active" id="tab-health">
@@ -330,6 +346,9 @@
 					<span class="empty-msg"
 						>Click "Lint" to check the current scenario file.</span
 					>
+				</div>
+				<div class="tab-pane" id="tab-report">
+					<iframe id="report-frame" src="about:blank" title="Playwright Report"></iframe>
 				</div>
 			</div>
 		</div>
@@ -524,6 +543,9 @@
 										setStatus(eventData === 'PASSED' ? 'passed' : 'failed')
 										refreshHealth()
 										refreshProposals()
+										reportLoaded = false
+										// Auto-open the report tab
+										activateTab('report')
 									} else if (eventType === 'error') {
 										appendLog('[ERROR] ' + eventData)
 										setStatus('failed')
@@ -637,10 +659,31 @@
 						.forEach((p) =>
 							p.classList.toggle('active', p.id === `tab-${name}`),
 						)
+					const bottomPanel = document.querySelector('.bottom-panel')
+					bottomPanel.classList.toggle('report-open', name === 'report')
+					if (name === 'report') loadReport()
 				}
 				document.querySelectorAll('.tab-btn').forEach((b) => {
 					b.addEventListener('click', () => activateTab(b.dataset.tab))
 				})
+
+				// ── Report iframe ──────────────────────────────────────────────────────────
+				let reportLoaded = false
+				async function loadReport(force = false) {
+					const frame = document.getElementById('report-frame')
+					const pane = document.getElementById('tab-report')
+					if (!force && reportLoaded) return
+					const res = await fetch('/api/report-ready')
+					const { ready } = await res.json()
+					if (ready) {
+						frame.src = '/report/index.html?' + Date.now()
+						reportLoaded = true
+						pane.style.padding = '0'
+					} else {
+						frame.src = 'about:blank'
+						pane.innerHTML = '<span class="empty-msg">No report yet — run the pipeline first.</span>'
+					}
+				}
 
 				// ── Helpers ───────────────────────────────────────────────────────────────
 				function escHtml(s) {

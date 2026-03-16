@@ -21,9 +21,11 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10)
 const ROOT_DIR = path.resolve(__dirname, '..', '..')
 const SCENARIOS_DIR = path.resolve(ROOT_DIR, 'scenarios')
 const OUTPUT_DIR = path.resolve(ROOT_DIR, 'output')
+const REPORT_DIR = path.resolve(ROOT_DIR, 'playwright-report')
 
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
+app.use('/report', express.static(REPORT_DIR))
 
 // ---------------------------------------------------------------------------
 // GET /api/scenarios — list all .feature files
@@ -204,6 +206,15 @@ app.post('/api/run', (req: Request, res: Response) => {
 	res.on('close', () => {
 		if (!proc.killed) proc.kill()
 	})
+})
+
+// ---------------------------------------------------------------------------
+// GET /api/report-ready — returns whether playwright-report/index.html exists
+// ---------------------------------------------------------------------------
+
+app.get('/api/report-ready', (_req: Request, res: Response) => {
+	const indexPath = path.join(REPORT_DIR, 'index.html')
+	res.json({ ready: fs.existsSync(indexPath) })
 })
 
 // ---------------------------------------------------------------------------

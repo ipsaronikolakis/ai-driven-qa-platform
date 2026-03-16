@@ -98,8 +98,9 @@ app.post('/api/lint', (req: Request, res: Response) => {
 		if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true })
 		fs.writeFileSync(tmpFile, content, 'utf-8')
 
+		const tsNode = path.join(ROOT_DIR, 'node_modules', '.bin', 'ts-node')
 		const result = child_process.spawnSync(
-			'npx', ['ts-node', 'src/vocabulary/lint-cli.ts', tmpFile],
+			tsNode, ['src/vocabulary/lint-cli.ts', tmpFile],
 			{ cwd: ROOT_DIR, encoding: 'utf-8', timeout: 15_000 },
 		)
 		const output = result.stdout + result.stderr
@@ -174,12 +175,11 @@ app.post('/api/run', (req: Request, res: Response) => {
 		res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`)
 	}
 
-	const args = ['ts-node', 'src/index.ts']
-	if (fresh) args.push('--fresh')
-
-	const proc = child_process.spawn('npx', args, {
+	const script = fresh ? 'fresh' : 'pipeline'
+	const proc = child_process.spawn('npm', ['run', script], {
 		cwd: ROOT_DIR,
 		env: { ...process.env },
+		shell: true,
 	})
 
 	proc.stdout.on('data', (chunk: Buffer) => {
@@ -201,7 +201,7 @@ app.post('/api/run', (req: Request, res: Response) => {
 		res.end()
 	})
 
-	req.on('close', () => {
+	res.on('close', () => {
 		if (!proc.killed) proc.kill()
 	})
 })

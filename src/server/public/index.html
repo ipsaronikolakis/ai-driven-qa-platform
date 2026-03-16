@@ -413,13 +413,27 @@
 					picker.innerHTML =
 						'<option value="all">— All files —</option>' +
 						files.map((f) => `<option value="${f.name}">${f.name}</option>`).join('')
-					// Default to first file
-					picker.value = files[0].name
-					loadFile(files[0].name)
+					// Default to all-files view
+					picker.value = 'all'
+					loadAllFiles(files)
+				}
+
+				async function loadAllFiles(files) {
+					currentFile = null
+					editor.updateOptions({ readOnly: true })
+					document.getElementById('btn-save').disabled = true
+					document.getElementById('btn-lint').disabled = true
+					const bar = '─'.repeat(52)
+					const sections = files.map((f) => `# ── ${f.name} ${bar.slice(f.name.length + 4)}\n\n${f.content.trimEnd()}`)
+					editor.setValue(sections.join('\n\n\n'))
+					monaco.editor.setModelMarkers(editor.getModel(), 'lint', [])
 				}
 
 				async function loadFile(name) {
 					currentFile = name
+					editor.updateOptions({ readOnly: false })
+					document.getElementById('btn-save').disabled = false
+					document.getElementById('btn-lint').disabled = false
 					const res = await fetch(`/api/scenarios/${name}`)
 					const data = await res.json()
 					editor.setValue(data.content)
@@ -428,16 +442,13 @@
 
 				document
 					.getElementById('file-picker')
-					.addEventListener('change', (e) => {
+					.addEventListener('change', async (e) => {
 						const val = e.target.value
 						if (val === 'all') {
-							editor.setValue('')
-							currentFile = null
-							document.getElementById('btn-save').disabled = true
-							document.getElementById('btn-lint').disabled = true
+							const res = await fetch('/api/scenarios')
+							const files = await res.json()
+							loadAllFiles(files)
 						} else if (val) {
-							document.getElementById('btn-save').disabled = false
-							document.getElementById('btn-lint').disabled = false
 							loadFile(val)
 						}
 					})

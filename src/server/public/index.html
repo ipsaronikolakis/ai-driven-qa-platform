@@ -65,17 +65,6 @@
 				gap: 8px;
 			}
 
-			select#run-scope {
-				background: #313244;
-				color: #cdd6f4;
-				border: 1px solid #45475a;
-				border-radius: 4px;
-				padding: 4px 8px;
-				font-size: 0.8rem;
-				cursor: pointer;
-				max-width: 200px;
-			}
-
 			select#file-picker {
 				background: #313244;
 				color: #cdd6f4;
@@ -328,7 +317,6 @@
 				<div class="run-toolbar">
 					<button id="btn-run" class="primary">&#9654; Run Pipeline</button>
 					<button id="btn-stop" class="danger" disabled>&#9632; Stop</button>
-					<select id="run-scope" title="Which feature files to run"></select>
 					<label><input type="checkbox" id="chk-fresh" /> --fresh</label>
 					<span id="status-badge" class="status-badge idle">Idle</span>
 					<a id="btn-report" href="/report/index.html" target="_blank" style="display:none" class="btn-report">View Report ↗</a>
@@ -414,31 +402,20 @@
 				let runProc = null
 
 				// ── File picker ──────────────────────────────────────────────────────────
-				let knownFiles = []
-
 				async function loadFileList() {
 					const res = await fetch('/api/scenarios')
-					knownFiles = await res.json()
+					const files = await res.json()
 					const picker = document.getElementById('file-picker')
+					if (files.length === 0) {
+						picker.innerHTML = '<option value="">No .feature files found</option>'
+						return
+					}
 					picker.innerHTML =
-						knownFiles.length === 0
-							? '<option value="">No .feature files found</option>'
-							: knownFiles
-									.map((f) => `<option value="${f.name}">${f.name}</option>`)
-									.join('')
-					if (knownFiles.length > 0) {
-						loadFile(knownFiles[0].name)
-						rebuildScopeOptions(knownFiles[0].name)
-					}
-				}
-
-				function rebuildScopeOptions(currentFile) {
-					const scope = document.getElementById('run-scope')
-					const options = ['<option value="all">All files</option>']
-					if (currentFile) {
-						options.push(`<option value="${escHtml(currentFile)}">${escHtml(currentFile)}</option>`)
-					}
-					scope.innerHTML = options.join('')
+						'<option value="all">— All files —</option>' +
+						files.map((f) => `<option value="${f.name}">${f.name}</option>`).join('')
+					// Default to first file
+					picker.value = files[0].name
+					loadFile(files[0].name)
 				}
 
 				async function loadFile(name) {
@@ -452,9 +429,16 @@
 				document
 					.getElementById('file-picker')
 					.addEventListener('change', (e) => {
-						if (e.target.value) {
-							loadFile(e.target.value)
-							rebuildScopeOptions(e.target.value)
+						const val = e.target.value
+						if (val === 'all') {
+							editor.setValue('')
+							currentFile = null
+							document.getElementById('btn-save').disabled = true
+							document.getElementById('btn-lint').disabled = true
+						} else if (val) {
+							document.getElementById('btn-save').disabled = false
+							document.getElementById('btn-lint').disabled = false
+							loadFile(val)
 						}
 					})
 
@@ -530,8 +514,8 @@
 						document.getElementById('btn-stop').disabled = false
 
 						const fresh = document.getElementById('chk-fresh').checked
-						const scopeVal = document.getElementById('run-scope').value
-						const targets = scopeVal === 'all' ? [] : [scopeVal]
+						const pickerVal = document.getElementById('file-picker').value
+						const targets = pickerVal === 'all' ? [] : [pickerVal]
 
 						// SSE via POST — use fetch + ReadableStream
 						const ctrl = new AbortController()

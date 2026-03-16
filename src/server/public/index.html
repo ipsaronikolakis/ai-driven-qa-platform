@@ -147,6 +147,22 @@
 				cursor: pointer;
 			}
 
+			.btn-report {
+				padding: 4px 12px;
+				background: #1e3a5f;
+				color: #7dd3fc;
+				border: 1px solid #2563eb;
+				border-radius: 4px;
+				font-size: 0.78rem;
+				font-weight: 500;
+				text-decoration: none;
+				white-space: nowrap;
+			}
+			.btn-report:hover {
+				background: #2563eb;
+				color: #fff;
+			}
+
 			.status-badge {
 				margin-left: auto;
 				padding: 3px 10px;
@@ -318,6 +334,7 @@
 					<button id="btn-stop" class="danger" disabled>&#9632; Stop</button>
 					<label><input type="checkbox" id="chk-fresh" /> --fresh</label>
 					<span id="status-badge" class="status-badge idle">Idle</span>
+					<a id="btn-report" href="/report/index.html" target="_blank" style="display:none" class="btn-report">View Report ↗</a>
 				</div>
 				<div id="run-log"></div>
 			</div>
@@ -480,9 +497,12 @@
 				const runLog = document.getElementById('run-log')
 				const statusBadge = document.getElementById('status-badge')
 
+				const btnReport = document.getElementById('btn-report')
+
 				function setStatus(s) {
 					statusBadge.className = `status-badge ${s}`
 					statusBadge.textContent = s.charAt(0).toUpperCase() + s.slice(1)
+					btnReport.style.display = (s === 'passed' || s === 'failed') ? 'inline-block' : 'none'
 				}
 
 				function appendLog(line) {
@@ -544,8 +564,6 @@
 										refreshHealth()
 										refreshProposals()
 										reportLoaded = false
-										// Auto-open the report tab
-										activateTab('report')
 									} else if (eventType === 'error') {
 										appendLog('[ERROR] ' + eventData)
 										setStatus('failed')

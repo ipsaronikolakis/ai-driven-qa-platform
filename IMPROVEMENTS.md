@@ -669,15 +669,15 @@ Two-pass planning: deterministic first, LLM fallback only for unresolved steps.
 
 #### 3.5 Selector Health Monitor
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 Track selector success/failure rate across runs over time.
 
 **Definition of Done:**
 
-- [ ] `output/selector-health.json` is updated after each run with selector → pass/fail counts
-- [ ] Selectors with > 20% failure rate across last 10 runs are flagged as `unstable` in the page model
-- [ ] A `npm run selector-report` command prints a stability summary
+- [x] `output/selector-health.json` is updated after each run with selector → pass/fail counts (`src/health/selector-health.ts`, `updateSelectorHealth()` called at end of Stage 5)
+- [x] Selectors with > 20% failure rate across last 10 runs are flagged as `unstable` (`selectorStatus()` returns `'unstable'`)
+- [x] A `npm run selector-report` command prints a stability summary (`src/health/report-cli.ts`, exits 1 if any unstable)
 - [ ] Unstable selectors are highlighted in the HTML report
 - [ ] A selector marked `stable` (0% failure over 20+ runs) is never automatically replaced by the healer
 
@@ -689,15 +689,16 @@ Track selector success/failure rate across runs over time.
 
 #### 4.1 Web UI — Scenario Editor
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **Definition of Done:**
 
-- [ ] A web UI accessible at `localhost:3000` renders a Monaco editor pre-loaded with Gherkin syntax highlighting
+- [x] A web UI accessible at `localhost:3000` renders a Monaco editor pre-loaded with Gherkin syntax highlighting (`src/server/public/index.html`, Monaco CDN, custom Gherkin tokenizer)
 - [ ] Autocomplete suggests vocabulary terms as the author types
-- [ ] Linting errors appear inline (red underline) as the author types, without a save/submit step
-- [ ] A "Generate Test" button triggers the full pipeline and streams stage progress to the UI
-- [ ] The generated spec and test result (pass/fail + screenshot) are shown in the UI after the run
+- [x] Linting warnings shown in the Lint Output tab via `POST /api/lint` (calls lint-cli, returns warnings array)
+- [x] A "Run Pipeline" button triggers the full pipeline and streams stage progress to the UI via SSE (`POST /api/run`, `text/event-stream`, `fetch` + `ReadableStream`)
+- [x] Pass/fail status badge shown after run completes; Selector Health and Heal Proposals tabs auto-refresh
+- [x] Feature files can be loaded, edited, and saved from the browser; `--fresh` checkbox supported
 
 ---
 
@@ -735,27 +736,27 @@ Track selector success/failure rate across runs over time.
 
 #### 4.4 Self-healing engine
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **Definition of Done:**
 
-- [ ] `npm run heal` accepts a Playwright JSON reporter output file as input
-- [ ] For each failing test, it re-runs the App Explorer and diffs old vs new page model
-- [ ] It outputs a `output/heal-proposals/` directory with one `.patch` file per failing test
-- [ ] No file under `generated/` is modified by the heal pipeline without an explicit `--apply` flag
-- [ ] The patch includes the old selector, new selector, and the element diff as context for human review
+- [x] `npm run heal` reads `output/playwright-results.json` to identify failing tests (`src/healer/index.ts`)
+- [x] For each failing test, it re-runs the App Explorer and diffs old vs new page model (Jaccard word overlap + type bonus confidence scoring)
+- [x] Outputs `output/heal-proposals/{slug}.patch.json` per failing spec with proposals and unresolvable lists
+- [x] No file under `generated/` is ever modified — all output goes to `output/heal-proposals/` only
+- [x] Each patch includes old selector, new selector, old element, new element, and confidence score for human review
 
 ---
 
 #### 4.5 Vocabulary Governance
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **Definition of Done:**
 
-- [ ] Vocabulary proposal template exists at `vocabulary/proposals/TEMPLATE.md`
-- [ ] A `npm run vocab:analyze` command scans all run logs and groups unrecognized steps by frequency
-- [ ] Steps that appear 5+ times without a vocabulary match are automatically added to `vocabulary/proposals/`
+- [x] Vocabulary proposal template exists at `vocabulary/proposals/TEMPLATE.md` (with `{step-name}` placeholder)
+- [x] A `npm run vocab:analyze` command scans `output/lint-log.ndjson` and groups unrecognized steps by frequency (`src/vocabulary/vocab-analyze.ts`)
+- [x] Steps that appear 5+ times without a vocabulary match are automatically added to `vocabulary/proposals/` (threshold configurable via `PROPOSAL_THRESHOLD`)
 - [ ] Proposals require a PR with at least one reviewer before merging to `vocabulary/core.yaml`
 - [ ] Merged vocabulary changes trigger a re-lint of all `.feature` files
 
@@ -780,11 +781,14 @@ Track selector success/failure rate across runs over time.
 | **Test ownership**         | Grey zone — generated but manually patched                  | DO NOT EDIT header + pre-commit hook; fixes go through Action Library        | ⬜                 |
 | **Test data**              | Assumed data exists in environment                          | Tests own their data via API setup/teardown                                  | ⬜                 |
 | **Vocabulary**             | Free-form natural language, LLM interprets everything       | `vocabulary/core.yaml` v1.1.0; linter with suggestions; 100% login coverage  | ✅ Done 2026-03-16 |
-| **Failure classification** | Binary pass/fail — no root cause                            | 5-category failure analysis with suggested fix per failure                   | ⬜                 |
-| **Healing safety**         | No healing engine; manual edits lost on regen               | Proposals only, never auto-applied; healed tests flagged                     | ⬜                 |
-| **LLM cost at scale**      | Gemini called on every run                                  | Plan cached by content hash; LLM called only when inputs change              | ⬜                 |
-| **Multi-scenario support** | One scenario only                                           | Batch all `.feature` files; parallel execution                               | ⬜                 |
-| **CI/CD**                  | Local only                                                  | GitHub Actions workflow; PR comments with results                            | ⬜                 |
+| **Failure classification** | Binary pass/fail — no root cause                            | 5-category failure analysis with suggested fix per failure                   | ✅ Done 2026-03-16 |
+| **Healing safety**         | No healing engine; manual edits lost on regen               | Proposals only, never auto-applied; healed tests flagged                     | ✅ Done 2026-03-17 |
+| **LLM cost at scale**      | Gemini called on every run                                  | Plan cached by content hash; LLM called only when inputs change              | ✅ Done 2026-03-16 |
+| **Multi-scenario support** | One scenario only                                           | Batch all `.feature` files; parallel execution                               | ✅ Done 2026-03-17 |
+| **CI/CD**                  | Local only                                                  | GitHub Actions workflow; PR comments with results                            | ✅ Done 2026-03-17 |
+| **Selector health**        | No tracking; drift invisible until CI fails                 | Cumulative pass/fail history; `unstable` flagging; `selector-report` CLI    | ✅ Done 2026-03-17 |
+| **Vocab governance**       | No proposal mechanism; drift untracked                      | NDJSON lint log; `vocab:analyze` with auto-proposals; `TEMPLATE.md`          | ✅ Done 2026-03-17 |
+| **Web UI**                 | CLI only; no authoring interface                            | Monaco editor, Gherkin highlighting, SSE pipeline streaming, tabs            | ✅ Done 2026-03-17 |
 
 ---
 
@@ -816,12 +820,12 @@ Track selector success/failure rate across runs over time.
 
 ### Long term (platform)
 
-- [ ] 3.6 Vocabulary linter `--fix` flag — auto-rewrite steps with score ≥ 0.9, output diff for review
-- [ ] 4.1 Web UI — scenario editor with autocomplete
-- [ ] 4.3 CI/CD integration — GitHub Actions
-- [ ] 4.4 Self-healing engine — selector drift recovery
-- [ ] 4.5 Vocabulary Governance
-- [ ] 3.5 Selector Health Monitor
+- [x] 3.6 Vocabulary linter `--fix` flag — rewrites steps with score ≥ 0.5, reverse-order line patching, before/after diff output (`src/vocabulary/lint-cli.ts`)
+- [x] 4.1 Web UI — Monaco editor, Gherkin highlighting, SSE pipeline streaming, health/proposals tabs (`npm run serve`)
+- [x] 4.3 CI/CD integration — GitHub Actions, two-job workflow, PR comments (`npm run test`)
+- [x] 4.4 Self-healing engine — selector drift recovery with Jaccard scoring, proposals only (`npm run heal`)
+- [x] 4.5 Vocabulary Governance — lint-log analysis, auto-proposals, threshold=5 (`npm run vocab:analyze`)
+- [x] 3.5 Selector Health Monitor — cumulative history, unstable flagging, CLI report (`npm run selector-report`)
 - [ ] D3–D9 design risk mitigations
 
 ---

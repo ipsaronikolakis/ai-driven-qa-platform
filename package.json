@@ -7,6 +7,10 @@
     "pipeline": "ts-node src/index.ts",
     "fresh": "ts-node src/index.ts --fresh",
     "lint:scenarios": "ts-node src/vocabulary/lint-cli.ts",
+    "selector-report": "ts-node src/health/report-cli.ts",
+    "vocab:analyze": "ts-node src/vocabulary/vocab-analyze.ts",
+    "heal": "ts-node src/healer/index.ts",
+    "serve": "ts-node src/server/server.ts",
     "test:unit": "npx playwright test src/bdd-parser/__tests__ src/vocabulary/__tests__ src/planner/__tests__ src/code-generator/__tests__ src/analyzer/__tests__ src/app-explorer/__tests__",
     "test:integration": "npx playwright test src/actions/__tests__/actions.spec.ts src/actions/__tests__/classifier-verify.spec.ts",
     "test": "npm run test:unit && npm run test:integration"
@@ -14,10 +18,12 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "dotenv": "^16.4.5",
+    "express": "^5.2.1",
     "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
+    "@types/express": "^5.0.6",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.13.1",
     "ts-node": "^10.9.2",

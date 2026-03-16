@@ -13,26 +13,16 @@ import { saveCheckpoint, loadCheckpoint } from './utils/checkpoint'
 import { VocabularyRegistry } from './vocabulary/registry'
 import { lintScenario } from './vocabulary/linter'
 import { analyzeFailures, formatAnalysis } from './analyzer/failure-analyzer'
-import { PageModel, TestPlan, ExplorationStep, GeneratedCode } from './types'
+import { updateSelectorHealth } from './health/selector-health'
+import { EXPLORATION_SCRIPT } from './config/exploration-script'
+import { PageModel, TestPlan, GeneratedCode } from './types'
 
 const VOCAB_FILE     = path.resolve(__dirname, '..', 'vocabulary', 'core.yaml')
 const SCENARIOS_DIR  = path.resolve(__dirname, '..', 'scenarios')
 const GENERATED_DIR  = path.resolve(__dirname, '..', 'generated')
 const OUTPUT_DIR     = path.resolve(__dirname, '..', 'output')
 const PW_JSON_REPORT = path.resolve(OUTPUT_DIR, 'playwright-results.json')
-
-/**
- * Exploration script for the login-then-secure flow.
- * Shared across all scenarios that target these pages.
- */
-const EXPLORATION_SCRIPT: ExplorationStep[] = [
-	{ action: 'navigate', value: 'https://the-internet.herokuapp.com/login' },
-	{ action: 'capture',  value: 'https://the-internet.herokuapp.com/login' },
-	{ action: 'fill',     selector: '#username', value: 'tomsmith' },
-	{ action: 'fill',     selector: '#password', value: 'SuperSecretPassword!' },
-	{ action: 'click',    selector: 'button.radius' },
-	{ action: 'capture',  value: 'https://the-internet.herokuapp.com/secure' },
-]
+const LINT_LOG_PATH  = path.resolve(OUTPUT_DIR, 'lint-log.ndjson')
 
 async function main(): Promise<void> {
 	const isFresh = process.argv.includes('--fresh')
@@ -59,6 +49,8 @@ async function main(): Promise<void> {
 
 	const allScenarios: Array<{ scenario: ReturnType<typeof parseAllScenarios>[0]; featureFile: string }> = []
 
+	if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true })
+
 	for (const featureFile of featureFiles) {
 		const scenarios = parseAllScenarios(featureFile)
 		for (const scenario of scenarios) {
@@ -71,6 +63,20 @@ async function main(): Promise<void> {
 			lintResult.warnings.forEach(w => {
 				console.warn(`    ${w.message}`)
 				if (w.suggestion) console.warn(`    → ${w.suggestion}`)
+
+				// Append unrecognised steps to lint-log.ndjson for vocab:analyze
+				try {
+					const closest = registry.findClosest(w.step.text)
+					const entry = {
+						runAt:    new Date().toISOString(),
+						scenario: scenario.scenario,
+						keyword:  w.step.keyword,
+						text:     w.step.text,
+						closest:  closest.entry.name,
+						score:    closest.score,
+					}
+					fs.appendFileSync(LINT_LOG_PATH, JSON.stringify(entry) + '\n', 'utf-8')
+				} catch { /* non-fatal */ }
 			})
 			allScenarios.push({ scenario, featureFile })
 		}
@@ -123,6 +129,13 @@ async function main(): Promise<void> {
 			console.log('\n' + formatAnalysis(analysis))
 			console.log(`  Analysis saved: ${path.join(OUTPUT_DIR, 'failure-analysis.json')}`)
 		}
+	}
+
+	// Selector health update (non-fatal)
+	try {
+		updateSelectorHealth(PW_JSON_REPORT, OUTPUT_DIR)
+	} catch (err) {
+		console.warn('[SelectorHealth] Update failed (non-fatal):', (err as Error).message)
 	}
 
 	// ── Final Report ────────────────────────────────────────────────────────

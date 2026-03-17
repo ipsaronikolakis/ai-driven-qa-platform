@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as crypto from 'crypto'
 import * as dotenv from 'dotenv'
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') })
@@ -23,6 +24,7 @@ const GENERATED_DIR  = path.resolve(__dirname, '..', 'generated')
 const OUTPUT_DIR     = path.resolve(__dirname, '..', 'output')
 const PW_JSON_REPORT = path.resolve(OUTPUT_DIR, 'playwright-results.json')
 const LINT_LOG_PATH  = path.resolve(OUTPUT_DIR, 'lint-log.ndjson')
+const PKG_VERSION    = (JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf-8')) as { version: string }).version
 
 async function main(): Promise<void> {
 	const isFresh = process.argv.includes('--fresh')
@@ -121,7 +123,8 @@ async function main(): Promise<void> {
 		console.log(`  Actions (${testPlan.actions.length}): ${testPlan.actions.map(a => a.action).join(', ')}`)
 
 		console.log(`[Stage 4] Generating spec: "${scenario.scenario}"...`)
-		const generated = generateSpecFile(testPlan, GENERATED_DIR, registry.version)
+		const pageModelHash = crypto.createHash('sha256').update(JSON.stringify(pageModel)).digest('hex').slice(0, 12)
+		const generated = generateSpecFile(testPlan, GENERATED_DIR, registry.version, pageModelHash, PKG_VERSION)
 		console.log(`  → ${path.relative(process.cwd(), generated.specFilePath)}`)
 		generatedSpecs.push(generated)
 	}

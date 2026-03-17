@@ -1,0 +1,16 @@
+#!/bin/sh
+# Reject commits that modify files under generated/ — these are auto-generated
+# and must never be manually edited. Fix selectors via src/actions/index.ts instead.
+
+staged=$(git diff --cached --name-only | grep '^generated/')
+if [ -n "$staged" ]; then
+  echo ""
+  echo "  ✗ pre-commit: cannot commit changes to generated/ files."
+  echo "    These files are AUTO-GENERATED — do not edit them directly."
+  echo "    Fix selectors or behaviour via src/actions/index.ts instead."
+  echo ""
+  echo "  Blocked files:"
+  echo "$staged" | sed 's/^/    • /'
+  echo ""
+  exit 1
+fi

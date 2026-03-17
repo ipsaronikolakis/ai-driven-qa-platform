@@ -11,6 +11,7 @@
     "vocab:analyze": "ts-node src/vocabulary/vocab-analyze.ts",
     "heal": "ts-node src/healer/index.ts",
     "serve": "ts-node src/server/server.ts",
+    "prepare": "git config core.hooksPath .githooks || true",
     "test:unit": "npx playwright test src/bdd-parser/__tests__ src/vocabulary/__tests__ src/planner/__tests__ src/code-generator/__tests__ src/analyzer/__tests__ src/app-explorer/__tests__",
     "test:integration": "npx playwright test src/actions/__tests__/actions.spec.ts src/actions/__tests__/classifier-verify.spec.ts",
     "test": "npm run test:unit && npm run test:integration"

@@ -24,6 +24,30 @@ const OUTPUT_DIR = path.resolve(process.cwd(), 'output')
 const PW_JSON_REPORT = path.resolve(OUTPUT_DIR, 'playwright-results.json')
 const OLD_MODEL_PATH = path.resolve(OUTPUT_DIR, 'stage2-page-model.json')
 const PROPOSALS_DIR = path.resolve(OUTPUT_DIR, 'heal-proposals')
+const HEALTH_PATH = path.resolve(OUTPUT_DIR, 'selector-health.json')
+
+// A selector is "stable" if it has ≥20 runs with ≤2% failure rate.
+// Stable selectors are never auto-replaced — a human must investigate.
+const STABLE_MIN_RUNS = 20
+const STABLE_MAX_FAIL_RATE = 0.02
+
+interface SelectorHealth { runCount: number; failCount: number }
+
+function loadSelectorHealth(): Map<string, SelectorHealth> {
+	const map = new Map<string, SelectorHealth>()
+	if (!fs.existsSync(HEALTH_PATH)) return map
+	try {
+		const raw = JSON.parse(fs.readFileSync(HEALTH_PATH, 'utf-8')) as Record<string, SelectorHealth>
+		for (const [sel, rec] of Object.entries(raw)) map.set(sel, rec)
+	} catch { /* non-fatal */ }
+	return map
+}
+
+function isStable(selector: string, health: Map<string, SelectorHealth>): boolean {
+	const rec = health.get(selector)
+	if (!rec || rec.runCount < STABLE_MIN_RUNS) return false
+	return rec.failCount / rec.runCount <= STABLE_MAX_FAIL_RATE
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -196,6 +220,8 @@ async function main(): Promise<void> {
 	const newElementsBySelector = new Map<string, PageElement>()
 	for (const el of newModel.elements) newElementsBySelector.set(el.selector, el)
 
+	const selectorHealth = loadSelectorHealth()
+
 	if (!fs.existsSync(PROPOSALS_DIR))
 		fs.mkdirSync(PROPOSALS_DIR, { recursive: true })
 
@@ -221,6 +247,14 @@ async function main(): Promise<void> {
 			// If selector still exists in new model, no healing needed
 			if (newElementsBySelector.has(selector)) {
 				console.log(`  ✓ ${selector} — still valid`)
+				continue
+			}
+
+			// Stable selectors have a strong track record — skip auto-replace,
+			// flag for human investigation instead.
+			if (isStable(selector, selectorHealth)) {
+				console.log(`  ⚠ ${selector} — STABLE selector failing (≥${STABLE_MIN_RUNS} runs, ≤${STABLE_MAX_FAIL_RATE * 100}% fail rate). Skipping auto-replace — investigate manually.`)
+				unresolvable.push(`${selector} [stable — manual review required]`)
 				continue
 			}
 

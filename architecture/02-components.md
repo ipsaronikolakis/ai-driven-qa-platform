@@ -5,6 +5,34 @@
 
 ---
 
+## Component Interaction Map
+
+```mermaid
+flowchart TD
+    YAML["vocabulary/core.yaml"] --> VR["1. Vocabulary Registry"]
+    VR --> LT["3. Vocabulary Linter"]
+    VR --> PE["6. Planning Engine"]
+    VR --> UI["2. BDD Authoring (Web UI)"]
+
+    UI -->|saves .feature| FS["scenarios/*.feature"]
+    FS --> SP["4. Scenario Parser"]
+    SP --> LT
+    SP --> PE
+
+    AE["5. App Explorer\n(headless Chromium)"] --> PM["PageModel"]
+    PM --> PE
+
+    PE -->|TestPlan| CG["7. Code Generator"]
+    CG -->|.spec.ts| ER["8. Execution Runner"]
+
+    ER -->|playwright-results.json| FA["9. Failure Analyzer"]
+    ER -->|selector-health.json| RPT["10. Reporting"]
+    FA -->|failure-analysis.json| RPT
+    RPT --> UI
+```
+
+---
+
 ## 1. Vocabulary Registry
 
 **What it does**
@@ -159,6 +187,27 @@ For each element found on the page, the explorer attempts selectors in this orde
 5. Text-based selector
 6. Rejected — bare tag selectors (e.g. `button`, `input`) are never used
 
+```mermaid
+flowchart TD
+    EL["Element found on page"]
+    EL --> T1{"data-testid\npresent?"}
+    T1 -->|yes| C1["[data-testid='...']"]
+    T1 -->|no| T2{"ARIA role +\naccessible name?"}
+    T2 -->|yes| C2["role=button[name='...']"]
+    T2 -->|no| T3{"id\npresent?"}
+    T3 -->|yes| C3["#id"]
+    T3 -->|no| T4{"name attr\npresent?"}
+    T4 -->|yes| C4["[name='...']"]
+    T4 -->|no| T5{"visible text\navailable?"}
+    T5 -->|yes| C5["text-based selector"]
+    T5 -->|no| C6["❌ Rejected\n(bare tag)"]
+
+    C1 & C2 & C3 & C4 & C5 --> U{"Unique?\n(count = 1)"}
+    U -->|yes| STABLE["✅ Accepted\n→ stability pass"]
+    U -->|no| NEXT["Try next priority"]
+    NEXT --> T2
+```
+
 **Uniqueness check**
 Each candidate selector is tested with `page.locator(sel).count()`. Only selectors that return a count of exactly 1 are accepted.
 
@@ -205,6 +254,18 @@ A `TestPlan`:
 - `url`: target URL
 - `actions[]`: each with `type`, `selector`, `value` (optional), and `source: 'vocabulary' | 'llm'`
 - `validation`: selector cross-reference results from `validatePlan()`
+
+```mermaid
+flowchart TD
+    IN["ParsedScenario + PageModel"] --> P1{"All steps in\nvocabulary?"}
+    P1 -->|yes| DET["Deterministic resolver\n(local rules, no API)"]
+    P1 -->|no| LLM["Gemini 2.5 Flash\n(temperature=0, JSON schema)"]
+    DET --> VAL["validatePlan()\ncheck selectors vs PageModel"]
+    LLM --> VAL
+    VAL --> GT50{"> 50% unknown\nselectors?"}
+    GT50 -->|yes| ERR["❌ Error — halt pipeline"]
+    GT50 -->|no| OUT["TestPlan\n(actions + validation field)"]
+```
 
 **Pass 1 — Deterministic resolution**
 If every step in the scenario matches a vocabulary entry that has a resolver mapping defined, the plan is built entirely from local rules. No API call is made. The console logs:

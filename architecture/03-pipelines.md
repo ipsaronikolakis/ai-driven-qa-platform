@@ -10,6 +10,51 @@ This document explains the two main pipelines — Generate and Heal — end-to-e
 
 **Entry point:** `src/index.ts`
 
+```mermaid
+flowchart TD
+    FE["scenarios/*.feature"] --> S1
+
+    subgraph S1 ["Stage 1 — Parse"]
+        P1["parseAllScenarios()"] --> P2["lintScenario()\n→ lint-log.ndjson"]
+    end
+
+    S1 --> CHK2{"Cache hit?\nstage2-page-model.json"}
+    CHK2 -->|"yes (no --fresh)"| S2HIT["[CACHE HIT]\nload PageModel"]
+    CHK2 -->|no| S2RUN
+
+    subgraph S2RUN ["Stage 2 — Explore"]
+        E1["headless Chromium\nexploreWithScript()"] --> E2["capturePageElements()\n(selector priority chain)"] --> E3["mergePageModels()"]
+    end
+
+    S2HIT & E3 --> PM["PageModel\n(output/stage2-page-model.json)"]
+
+    PM --> CHK3{"Cache hit?\nstage3-slug.json"}
+    CHK3 -->|"yes (no --fresh)"| S3HIT["[CACHE HIT]\nload TestPlan"]
+    CHK3 -->|no| S3RUN
+
+    subgraph S3RUN ["Stage 3 — Plan (per scenario)"]
+        PL1{"All steps\nin vocab?"} -->|yes| PL2["Deterministic\nresolver"]
+        PL1 -->|no| PL3["Gemini 2.5 Flash\nLLM fallback"]
+        PL2 & PL3 --> PL4["validatePlan()"]
+    end
+
+    S3HIT & PL4 --> TP["TestPlan\n(output/stage3-slug.json)"]
+
+    subgraph S4 ["Stage 4 — Generate"]
+        TP --> G1["generateSpecFile()"] --> G2["syntax check\nts.transpileModule()"] --> G3["generated/slug.spec.ts"]
+    end
+
+    subgraph S5 ["Stage 5 — Run"]
+        G3 --> R1["npx playwright test"] --> R2["playwright-results.json"]
+        R2 --> R3["analyzeFailures()\n→ failure-analysis.json"]
+        R2 --> R4["updateSelectorHealth()\n→ selector-health.json"]
+    end
+
+    R2 --> END{"All specs\npassed?"}
+    END -->|yes| PASS["✅ exit 0"]
+    END -->|no| FAIL["❌ exit 1"]
+```
+
 The following walkthrough uses a concrete example: a login scenario running against `the-internet.herokuapp.com`.
 
 ---
@@ -82,6 +127,28 @@ The following walkthrough uses a concrete example: a login scenario running agai
 **Command:** `npm run heal`
 
 **Entry point:** `src/healer/index.ts`
+
+```mermaid
+flowchart TD
+    A["output/playwright-results.json\n(failing specs)"] --> B["Load old PageModel\nstage2-page-model.json"]
+    B --> C["Re-explore app\nexploreWithScript()"]
+    C --> D["Fresh PageModel"]
+
+    D --> E["For each failing spec:\nextract selectors via regex"]
+
+    E --> F{"Selector still\nvalid in new model?"}
+    F -->|yes| SKIP["Skip — no change needed"]
+    F -->|no| G{"Is selector\nstable?\n(≥20 runs, ≤2% fail)"}
+    G -->|yes| MAN["Flag: manual review\nrequired"]
+    G -->|no| H["Score candidates\nJaccard + type bonus"]
+    H --> I{"Score ≥ 0.4?"}
+    I -->|yes| PROP["Write proposal\n(oldSelector → newSelector\n+ confidence + healedComment)"]
+    I -->|no| UNRESOLV["Mark unresolvable"]
+
+    PROP & UNRESOLV & MAN --> OUT["output/heal-proposals/slug.patch.json"]
+    OUT --> HUMAN["👤 Human reviews\n& applies to src/actions/index.ts"]
+    HUMAN --> REPIPE["Re-run Generate Pipeline"]
+```
 
 The heal pipeline reads the results of the last generate pipeline run, re-explores the application, and produces selector replacement proposals. It never modifies source files directly.
 

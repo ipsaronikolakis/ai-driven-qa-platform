@@ -26,11 +26,40 @@ This platform addresses all four problems by treating the BDD scenario as the au
 
 ---
 
+## System at a Glance
+
+```mermaid
+flowchart LR
+    A["QA Author\n(Browser)"] -->|writes .feature| B["Web UI\n(Monaco Editor)"]
+    B -->|Save| C["scenarios/"]
+    C -->|"npm run pipeline\nor CI push"| D["AI-Driven QA Platform"]
+    D -->|Playwright spec| E["Test Runner"]
+    E -->|pass/fail + traces| F["Reports\n(HTML · Health · PR comment)"]
+    F --> A
+```
+
+---
+
 ## How It Works
 
 The platform is a pipeline. Each stage receives output from the previous one and passes its own output to the next. Here is a concrete example:
 
 A QA author wants to verify that logging in to the application works.
+
+```mermaid
+flowchart TD
+    S1["Step 1\nBDD Authoring\n(Monaco Editor)"]
+    S2["Step 2\nVocabulary Linting\n(canonical step check)"]
+    S3["Step 3\nScenario Parsing\n(structured BDDStep objects)"]
+    S4["Step 4\nApp Exploration\n(headless Chromium → PageModel)"]
+    S5["Step 5\nPlanning\n(vocab-first · LLM fallback)"]
+    S6["Step 6\nCode Generation\n(.spec.ts + provenance header)"]
+    S7["Step 7\nExecution\n(Playwright · traces · screenshots)"]
+    S8["Step 8\nFailure Analysis\n(5 categories · suggestions)"]
+    S9["Step 9\nReporting\n(UI · PR comment · health dashboard)"]
+
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9
+```
 
 **Step 1 — BDD Authoring**
 The author opens the web editor and writes:
@@ -75,6 +104,22 @@ Results are surfaced in multiple places: the Web UI shows pass/fail with links t
 ## Two Workflows
 
 The platform has two distinct pipelines, each invoked separately.
+
+```mermaid
+flowchart LR
+    subgraph Generate ["Generate Pipeline  (npm run pipeline)"]
+        direction LR
+        G1[Parse] --> G2[Explore] --> G3[Plan] --> G4[Generate] --> G5[Run]
+    end
+
+    subgraph Heal ["Heal Pipeline  (npm run heal)"]
+        direction LR
+        H1[Read failures] --> H2[Re-explore] --> H3[Compare selectors] --> H4[Write proposals]
+    end
+
+    G5 -->|"spec fails"| Heal
+    H4 -->|"human reviews\n& applies fix"| G1
+```
 
 **Generate pipeline** (`npm run pipeline` or the "Run Pipeline" button in the Web UI)
 

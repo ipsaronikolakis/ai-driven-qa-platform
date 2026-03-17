@@ -10,6 +10,41 @@ This document describes the GitHub Actions workflow — triggers, jobs, individu
 
 ---
 
+## CI/CD Flow
+
+```mermaid
+flowchart TD
+    T1["push to any branch"] & T2["pull_request"] & T3["workflow_dispatch"] --> J1
+
+    subgraph J1 ["Job 1 — Unit Tests (ubuntu-latest)"]
+        U1["checkout + Node 22 + npm ci"] --> U2["playwright install chromium"]
+        U2 --> U3["npm run test:unit"]
+    end
+
+    J1 -->|"❌ fail"| STOP["Pipeline stopped\nno further jobs"]
+    J1 -->|"✅ pass"| J2
+
+    subgraph J2 ["Job 2 — QA Pipeline (ubuntu-latest)"]
+        Q1["checkout + Node 22 + npm ci\nplaywright install chromium"]
+        Q1 --> Q2["npm run lint:scenarios"]
+        Q2 --> Q3["npm run fresh\n(GEMINI_API_KEY optional)"]
+        Q3 --> Q4["Upload playwright-report\n(always · 30 days)"]
+        Q3 -->|"on failure"| Q5["Upload failure-analysis\n(30 days)"]
+        Q4 --> Q6["npm run selector-report\n(non-blocking)"]
+        Q6 --> Q7["Upload selector-health.html\n(always, ignore if missing)"]
+        Q7 --> Q8{"pull_request\nevent?"}
+        Q8 -->|yes| Q9["Post PR comment\n(github-script)"]
+        Q8 -->|no| DONE["Done"]
+        Q9 --> DONE
+    end
+
+    DONE --> RESULT{"Exit code?"}
+    RESULT -->|0| PASS["✅ PR can merge"]
+    RESULT -->|1| FAIL["❌ PR blocked"]
+```
+
+---
+
 ## Triggers
 
 ```yaml
@@ -100,6 +135,23 @@ Unit tests live under `src/*/tests/` and cover:
 ## PR Comment Contents
 
 When the workflow runs on a pull request, a comment is posted automatically. The comment is regenerated on each push to the PR.
+
+```mermaid
+flowchart TD
+    SCRIPT["github-script reads output files"]
+    SCRIPT --> C1["playwright-results.json\n→ status badge + counts table"]
+    C1 --> C2{"Any failures?"}
+    C2 -->|yes| C3["failure-analysis.json\n→ category + suggestion per failure"]
+    C2 -->|no| C4
+    C3 --> C4{"Unstable selectors?\n(fail rate > 20%)"}
+    C4 -->|yes| C5["selector-health.json\n→ unstable selector list"]
+    C4 -->|no| C6
+    C5 --> C6{"HEALED annotations\nin src/actions/index.ts?"}
+    C6 -->|yes| C7["scan for // HEALED: lines\n→ list for human review"]
+    C6 -->|no| C8
+    C7 --> C8["Append workflow run link"]
+    C8 --> POST["Post comment on PR"]
+```
 
 ### Status Section
 

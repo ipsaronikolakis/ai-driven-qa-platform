@@ -21,6 +21,14 @@ The UI is divided into three panels:
 - **Right panel:** pipeline run controls and live log output
 - **Bottom panel (220px):** tabbed data panel showing selector health, heal proposals, lint output, and feedback
 
+```mermaid
+block-beta
+    columns 2
+    LEFT["Left Panel (55%)\n──────────────\nFile picker dropdown\nMonaco Editor\n• Gherkin highlighting\n• Vocab autocomplete\n• Ctrl+S to save\n[Save] [Lint] buttons"]:1
+    RIGHT["Right Panel\n──────────────\nStatus badge (Idle/Running/Passed/Failed)\n[Run Pipeline] [Stop] [--fresh]\nPage Model info bar\nLive SSE log stream\n[View Report] link"]:1
+    BOTTOM["Bottom Panel (220px) — Tabs: Selector Health | Heal Proposals | Lint Output | Feedback"]:2
+```
+
 ---
 
 ## Left Panel — BDD Scenario Editor
@@ -90,6 +98,30 @@ Colour coding:
 - Streams SSE output line by line as the pipeline executes
 - Rendered in a monospace font
 - Auto-scrolls to the bottom as new lines arrive
+
+**Pipeline run request/response flow:**
+
+```mermaid
+sequenceDiagram
+    participant U as Browser (UI)
+    participant S as server.ts
+    participant P as Pipeline process
+    participant FS as Filesystem
+
+    U->>S: POST /api/run
+    S->>P: spawn ts-node src/index.ts
+    loop SSE stream
+        P-->>S: stdout line
+        S-->>U: data: <line>\n\n
+        U->>U: append to log div
+    end
+    P->>FS: write playwright-results.json\n selector-health.json\n failure-analysis.json
+    P-->>S: exit 0 / 1
+    S-->>U: data: done (passed/failed)\n\n
+    U->>S: GET /api/selector-health
+    U->>S: GET /api/feedback-proposals
+    U->>U: refresh bottom panel tabs
+```
 
 ---
 

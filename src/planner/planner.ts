@@ -60,11 +60,9 @@ export async function generateTestPlan(
 	if (registry && canResolveAll(scenario.steps, registry)) {
 		console.log('[Planner] All steps resolved deterministically — Gemini skipped.')
 		const actions = resolveAll(scenario.steps, registry, pageModel)
-		return {
-			scenarioName: scenario.scenario,
-			url: pageModel.url,
-			actions,
-		}
+		const plan = { scenarioName: scenario.scenario, url: pageModel.url, actions }
+		const validation = validatePlan(plan, pageModel)
+		return { ...plan, validation }
 	}
 
 	if (registry) {
@@ -122,5 +120,5 @@ export async function generateTestPlan(
 		)
 	}
 
-	return parsed
+	return { ...parsed, validation }
 }

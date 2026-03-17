@@ -288,6 +288,44 @@
 				font-style: italic;
 				padding: 8px;
 			}
+
+			.pill.high   { background: #7f1d1d; color: #fca5a5; }
+			.pill.medium { background: #78350f; color: #fcd34d; }
+			.pill.low    { background: #14532d; color: #86efac; }
+
+			.page-model-info {
+				background: #181825;
+				border-bottom: 1px solid #313244;
+				padding: 4px 14px;
+				font-size: 0.73rem;
+				color: #6c7086;
+				display: flex;
+				gap: 18px;
+				align-items: center;
+			}
+			.page-model-info .good { color: #86efac; }
+			.page-model-info .warn { color: #fcd34d; }
+			.page-model-info .bad  { color: #fca5a5; }
+
+			.feedback-item {
+				margin-bottom: 6px;
+				padding: 5px 8px;
+				background: #11111b;
+				border-radius: 4px;
+			}
+			.feedback-item .suggestion {
+				color: #6c7086;
+				margin-top: 3px;
+				font-size: 0.72rem;
+			}
+			.feedback-section-label {
+				margin: 8px 0 4px;
+				font-weight: 600;
+				color: #6c7086;
+				font-size: 0.72rem;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+			}
 		</style>
 	</head>
 	<body>
@@ -321,6 +359,7 @@
 					<span id="status-badge" class="status-badge idle">Idle</span>
 					<a id="btn-report" href="/api/report" target="_blank" style="display:none" class="btn-report">View Report ↗</a>
 				</div>
+				<div id="page-model-info" class="page-model-info" style="display:none"></div>
 				<div id="run-log"></div>
 			</div>
 		</div>
@@ -333,6 +372,7 @@
 				</button>
 				<button class="tab-btn" data-tab="proposals">Heal Proposals</button>
 				<button class="tab-btn" data-tab="lint-output">Lint Output</button>
+				<button class="tab-btn" data-tab="feedback">Feedback</button>
 			</div>
 			<div class="tab-content">
 				<div class="tab-pane active" id="tab-health">
@@ -342,6 +382,9 @@
 				</div>
 				<div class="tab-pane" id="tab-proposals">
 					<span class="empty-msg">No heal proposals yet.</span>
+				</div>
+				<div class="tab-pane" id="tab-feedback">
+					<span class="empty-msg">Run <code>npm run feedback:update</code> after a pipeline run to populate.</span>
 				</div>
 				<div class="tab-pane" id="tab-lint-output">
 					<span class="empty-msg"
@@ -396,7 +439,48 @@
 					},
 				)
 
-				// ── State ─────────────────────────────────────────────────────────────────
+				// ── Vocabulary autocomplete ───────────────────────────────────────────────
+			let vocabTerms = []
+			fetch('/api/vocabulary')
+				.then(r => r.json())
+				.then(data => { vocabTerms = data.terms ?? [] })
+				.catch(() => {})
+
+			monaco.languages.registerCompletionItemProvider('gherkin', {
+				triggerCharacters: [' '],
+				provideCompletionItems: function(model, position) {
+					const lineText = model.getLineContent(position.lineNumber)
+					const bddMatch = lineText.match(/^\s*(Given|When|Then|And|But)\s+(.*)$/)
+					if (!bddMatch) return { suggestions: [] }
+					const typed = bddMatch[2].toLowerCase()
+					// startColumn = column right after keyword + spaces (1-based)
+					// bddMatch[0].length - bddMatch[2].length gives us the offset to where typed text starts
+					const startColumn = bddMatch[2].length === 0
+						? position.column
+						: lineText.length - bddMatch[2].length + 1
+					const wordRange = {
+						startLineNumber: position.lineNumber,
+						endLineNumber: position.lineNumber,
+						startColumn,
+						endColumn: position.column,
+					}
+					const suggestions = vocabTerms
+						.filter(t => typed.length === 0 || t.name.toLowerCase().includes(typed))
+						.map(t => ({
+							label: t.name,
+							kind: t.kind === 'action'
+								? monaco.languages.CompletionItemKind.Function
+								: monaco.languages.CompletionItemKind.Event,
+							insertText: t.name,
+							detail: t.kind,
+							documentation: t.description,
+							range: wordRange,
+						}))
+					return { suggestions }
+				}
+			})
+
+			// ── State ─────────────────────────────────────────────────────────────────
 				let currentFile = null
 				let runEventSource = null
 				let runProc = null
@@ -576,6 +660,8 @@
 										setStatus(eventData === 'PASSED' ? 'passed' : 'failed')
 										refreshHealth()
 										refreshProposals()
+										refreshPageModelInfo()
+										refreshFeedback()
 									} else if (eventType === 'error') {
 										appendLog('[ERROR] ' + eventData)
 										setStatus('failed')
@@ -677,7 +763,64 @@
     </table>`
 				}
 
-				// ── Tab switching ─────────────────────────────────────────────────────────
+				// ── Page Model Info bar ───────────────────────────────────────────────────
+			async function refreshPageModelInfo() {
+				const bar = document.getElementById('page-model-info')
+				try {
+					const res = await fetch('/api/output/stage2-page-model.json')
+					if (!res.ok) { bar.style.display = 'none'; return }
+					const checkpoint = await res.json()
+					const model = checkpoint.data ?? checkpoint
+					const coverage = model.testidCoverage ?? null
+					const unstable = (model.unstableSelectors ?? []).length
+					const total = (model.elements ?? []).length
+					if (total === 0) { bar.style.display = 'none'; return }
+					const pct = coverage !== null ? Math.round(coverage * 100) : null
+					const covClass = pct === null ? '' : pct >= 80 ? 'good' : pct >= 40 ? 'warn' : 'bad'
+					const unstClass = unstable === 0 ? 'good' : unstable <= 3 ? 'warn' : 'bad'
+					bar.innerHTML =
+						'Page model: ' +
+						'<span>' + total + ' elements</span>' +
+						(pct !== null ? ' &nbsp;|&nbsp; <span class="' + covClass + '">testid coverage: ' + pct + '%</span>' : '') +
+						' &nbsp;|&nbsp; <span class="' + unstClass + '">' + unstable + ' unstable selector' + (unstable !== 1 ? 's' : '') + '</span>'
+					bar.style.display = 'flex'
+				} catch { bar.style.display = 'none' }
+			}
+
+			// ── Feedback Proposals ────────────────────────────────────────────────────
+			async function refreshFeedback() {
+				const pane = document.getElementById('tab-feedback')
+				try {
+					const res = await fetch('/api/feedback-proposals')
+					const report = await res.json()
+					const proposals = report.proposals ?? []
+					if (proposals.length === 0) {
+						pane.innerHTML = '<span class="empty-msg">No feedback proposals yet. Run <code>npm run feedback:update</code> after a pipeline run.</span>'
+						return
+					}
+					const groups = {}
+					for (const p of proposals) {
+						if (!groups[p.type]) groups[p.type] = []
+						groups[p.type].push(p)
+					}
+					let html = ''
+					for (const [type, items] of Object.entries(groups)) {
+						html += '<div class="feedback-section-label">' + escHtml(type.replace(/-/g, ' ')) + '</div>'
+						for (const p of items) {
+							html += '<div class="feedback-item">'
+							html += '<span class="pill ' + escHtml(p.priority) + '">' + escHtml(p.priority) + '</span>'
+							html += ' ' + escHtml(p.evidence)
+							if (p.suggestion) html += '<div class="suggestion">' + escHtml(p.suggestion) + '</div>'
+							html += '</div>'
+						}
+					}
+					pane.innerHTML = html
+				} catch (err) {
+					pane.innerHTML = '<span class="empty-msg">Could not load feedback proposals.</span>'
+				}
+			}
+
+			// ── Tab switching ─────────────────────────────────────────────────────────
 				function activateTab(name) {
 					document
 						.querySelectorAll('.tab-btn')
@@ -706,6 +849,8 @@
 				loadFileList()
 				refreshHealth()
 				refreshProposals()
+				refreshPageModelInfo()
+				refreshFeedback()
 			})
 		</script>
 	</body>

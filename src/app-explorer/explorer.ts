@@ -180,11 +180,15 @@ async function capturePageElements(
     }
 
     function getVisibleText(el: Element): string {
+      // For icon-only links/buttons: try img[alt] and title as final fallbacks
+      const imgAlt = el.querySelector('img[alt]')?.getAttribute('alt')?.trim() ?? '';
       const text =
         (el as HTMLElement).innerText?.trim() ||
         (el as HTMLInputElement).placeholder?.trim() ||
         (el as HTMLInputElement).value?.trim() ||
         el.getAttribute('aria-label')?.trim() ||
+        el.getAttribute('title')?.trim() ||
+        imgAlt ||
         '';
       const MAX = 150;
       return text.length > MAX ? text.substring(0, MAX) + '…' : text;

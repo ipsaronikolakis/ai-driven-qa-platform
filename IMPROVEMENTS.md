@@ -234,7 +234,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 - [x] Healing output is always `output/heal-proposals/<spec-name>.patch.json` — never a direct file overwrite
 - [x] Each patch proposal includes a `healedComment` field: `// HEALED: <date> — original: '<old>' — new: '<new>'` to paste above the changed line
 - [x] Each proposal includes `oldElement` and `newElement` with text/type/selector for side-by-side human review
-- [ ] CI marks healed tests with a `[HEALED]` label in the report
+- [x] CI marks healed tests with a `[HEALED]` label in the report — PR comment surfaces `// HEALED:` annotations from `src/actions/index.ts`
 
 ---
 
@@ -321,7 +321,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | 🟠       | Single-scenario only — subsequent `Scenario:` blocks overwrite | ✅     |
 | 🟡       | `line.startsWith('#')` misidentifies steps containing `#`      | 🚫     |
 | 🟡       | `Scenario Outline:` blocks silently ignored                    | ✅     |
-| 🟢       | No line numbers in error messages                              | ⬜     |
+| 🟢       | No line numbers in error messages                              | ✅     |
 
 ### Stage 2 — App Explorer
 
@@ -334,7 +334,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | 🟠       | Text truncated at 100 chars with no marker                       | ✅     |
 | 🟠       | No retry on navigation failure                                   | ✅     |
 | 🟡       | Tailwind numeric-prefix classes filtered out                     | ⬜     |
-| 🟡       | Icon-only links silently dropped                                 | ⬜     |
+| 🟡       | Icon-only links silently dropped                                 | ✅     |
 | 🟡       | Browser not guaranteed closed if `page.evaluate()` throws        | ✅     |
 
 ### Stage 3 — LLM Planner
@@ -369,7 +369,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | 🟠       | 60-second hardcoded timeout                                      | ✅     |
 | 🟠       | `err.status ?? 1` — exit code 0 coerced to 1 on unexpected error | ✅     |
 | 🟡       | `total: 1` hardcoded — wrong for multi-test specs                | ✅     |
-| 🟡       | No distinction between Playwright crash and test failure         | ⬜     |
+| 🟡       | No distinction between Playwright crash and test failure         | ✅     |
 
 ### Config & Architecture
 
@@ -474,7 +474,7 @@ After Gemini returns the plan, cross-reference every `selector` value against `p
 - [x] Unknown selectors emit `[WARN] selector not found in page model: <value>`
 - [x] The warning includes the closest matching element from the page model as a suggestion
 - [x] If more than 50% of selectors are unknown, the pipeline throws an error rather than continuing
-- [ ] Validation results are included in `output/test-plan.json` as a `validation` field
+- [x] Validation results are included in `output/test-plan.json` as a `validation` field
 
 ---
 
@@ -678,7 +678,7 @@ Track selector success/failure rate across runs over time.
 - [x] `output/selector-health.json` is updated after each run with selector → pass/fail counts (`src/health/selector-health.ts`, `updateSelectorHealth()` called at end of Stage 5)
 - [x] Selectors with > 20% failure rate across last 10 runs are flagged as `unstable` (`selectorStatus()` returns `'unstable'`)
 - [x] A `npm run selector-report` command prints a stability summary (`src/health/report-cli.ts`, exits 1 if any unstable)
-- [ ] Unstable selectors are highlighted in the HTML report
+- [x] Unstable selectors highlighted in `output/selector-health.html` (unstable rows in red); uploaded as CI artifact; surfaced in PR comment
 - [x] A selector with ≥20 runs and ≤2% failure rate is never automatically replaced by the healer — `isStable()` check in `src/healer/index.ts`; flagged for manual review instead
 
 ---
@@ -694,7 +694,7 @@ Track selector success/failure rate across runs over time.
 **Definition of Done:**
 
 - [x] A web UI accessible at `localhost:3000` renders a Monaco editor pre-loaded with Gherkin syntax highlighting (`src/server/public/index.html`, Monaco CDN, custom Gherkin tokenizer)
-- [ ] Autocomplete suggests vocabulary terms as the author types
+- [x] Autocomplete suggests vocabulary terms as the author types — Monaco completion provider on BDD keywords via `GET /api/vocabulary`
 - [x] Linting warnings shown in the Lint Output tab via `POST /api/lint` (calls lint-cli, returns warnings array)
 - [x] A "Run Pipeline" button triggers the full pipeline and streams stage progress to the UI via SSE (`POST /api/run`, `text/event-stream`, `fetch` + `ReadableStream`)
 - [x] Pass/fail status badge shown after run completes; Selector Health and Heal Proposals tabs auto-refresh

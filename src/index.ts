@@ -135,10 +135,15 @@ async function main(): Promise<void> {
 
 	// Failure analysis
 	if (!result.passed) {
-		const analysis = analyzeFailures(PW_JSON_REPORT, result.specFilePath, OUTPUT_DIR)
-		if (analysis) {
-			console.log('\n' + formatAnalysis(analysis))
-			console.log(`  Analysis saved: ${path.join(OUTPUT_DIR, 'failure-analysis.json')}`)
+		if (result.crashedBeforeTests) {
+			console.error('\n[Stage 5] Playwright crashed before running tests — skipping failure analysis.')
+			console.error('  Fix the compilation/config error above and re-run.')
+		} else {
+			const analysis = analyzeFailures(PW_JSON_REPORT, result.specFilePath, OUTPUT_DIR)
+			if (analysis) {
+				console.log('\n' + formatAnalysis(analysis))
+				console.log(`  Analysis saved: ${path.join(OUTPUT_DIR, 'failure-analysis.json')}`)
+			}
 		}
 	}
 

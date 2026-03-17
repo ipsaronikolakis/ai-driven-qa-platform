@@ -23,7 +23,9 @@ export function parseAllScenarios(filePath: string): ParsedScenario[] {
   const scenarios: ParsedScenario[] = [];
   let state: ParserState = 'IDLE';
   let featureName = '';
+  let featureLine = -1;
   let scenarioName = '';
+  let scenarioLine = -1;
   let steps: BDDStep[] = [];
 
   function flushScenario() {
@@ -34,13 +36,15 @@ export function parseAllScenarios(filePath: string): ParsedScenario[] {
     steps = [];
   }
 
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
+  for (let i = 0; i < lines.length; i++) {
+    const lineNum = i + 1;
+    const line = lines[i].trim();
 
     if (!line || line.startsWith('#')) continue;
 
     if (line.startsWith('Feature:')) {
       featureName = line.replace('Feature:', '').trim();
+      featureLine = lineNum;
       state = 'IN_FEATURE';
       continue;
     }
@@ -48,6 +52,7 @@ export function parseAllScenarios(filePath: string): ParsedScenario[] {
     if (line.startsWith('Scenario Outline:') || line.startsWith('Scenario:')) {
       flushScenario(); // save the previous scenario before starting a new one
       scenarioName = line.replace('Scenario Outline:', '').replace('Scenario:', '').trim();
+      scenarioLine = lineNum;
       state = 'IN_SCENARIO';
       continue;
     }
@@ -56,15 +61,19 @@ export function parseAllScenarios(filePath: string): ParsedScenario[] {
       const firstWord = line.split(' ')[0];
       if (isStepKeyword(firstWord)) {
         const stepText = line.slice(firstWord.length).trim();
-        steps.push({ keyword: firstWord, text: stepText });
+        steps.push({ keyword: firstWord, text: stepText, line: lineNum });
       }
     }
   }
 
   flushScenario(); // save the last scenario
 
-  if (!featureName) throw new Error(`No Feature: found in ${filePath}`);
-  if (scenarios.length === 0) throw new Error(`No Scenario: blocks found in ${filePath}`);
+  void scenarioLine; // recorded in ParsedScenario steps; here for future use
+  if (!featureName) throw new Error(`No Feature: directive found in ${filePath} (${lines.length} lines)`);
+  if (scenarios.length === 0) {
+    const hint = featureLine > 0 ? ` (Feature: at line ${featureLine})` : '';
+    throw new Error(`No Scenario: blocks found in ${filePath}${hint}`);
+  }
 
   return scenarios;
 }

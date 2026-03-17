@@ -1,16 +1,12 @@
-import { TestPlan, PageModel } from '../types';
+import { TestPlan, PageModel, PlanValidation } from '../types';
 
-export interface ValidationResult {
-  valid: boolean;
-  warnings: string[];
-  unknownSelectors: string[];
-}
+export type { PlanValidation as ValidationResult };
 
 /**
  * Cross-references every selector in the plan against the page model.
  * Flags selectors Gemini produced that don't match any known element.
  */
-export function validatePlan(plan: TestPlan, pageModel: PageModel): ValidationResult {
+export function validatePlan(plan: TestPlan, pageModel: PageModel): PlanValidation {
   const warnings: string[] = [];
   const unknownSelectors: string[] = [];
   const knownSelectors = new Set(pageModel.elements.map(e => e.selector));

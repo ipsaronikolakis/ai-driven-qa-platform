@@ -101,6 +101,28 @@ app.put('/api/scenarios/:name', (req: Request, res: Response) => {
 })
 
 // ---------------------------------------------------------------------------
+// GET /api/vocabulary — list canonical vocabulary terms for editor autocomplete
+// ---------------------------------------------------------------------------
+
+app.get('/api/vocabulary', (_req: Request, res: Response) => {
+	try {
+		const yaml = require('js-yaml') as typeof import('js-yaml')
+		const vocabPath = path.resolve(ROOT_DIR, 'vocabulary', 'core.yaml')
+		const raw = yaml.load(fs.readFileSync(vocabPath, 'utf-8')) as {
+			actions?: Array<{ name: string; description?: string }>
+			assertions?: Array<{ name: string; description?: string }>
+		}
+		const terms = [
+			...(raw.actions ?? []).map(e => ({ name: e.name, kind: 'action', description: e.description ?? '' })),
+			...(raw.assertions ?? []).map(e => ({ name: e.name, kind: 'assertion', description: e.description ?? '' })),
+		]
+		res.json({ terms })
+	} catch (err) {
+		res.status(500).json({ error: (err as Error).message })
+	}
+})
+
+// ---------------------------------------------------------------------------
 // POST /api/lint — lint feature file content, return warnings
 // ---------------------------------------------------------------------------
 
@@ -250,6 +272,19 @@ app.get('/api/selector-health', (_req: Request, res: Response) => {
 		return
 	}
 	res.sendFile(healthPath)
+})
+
+// ---------------------------------------------------------------------------
+// GET /api/feedback-proposals — return aggregated feedback proposals JSON
+// ---------------------------------------------------------------------------
+
+app.get('/api/feedback-proposals', (_req: Request, res: Response) => {
+	const proposalsPath = path.join(OUTPUT_DIR, 'feedback', 'proposals.json')
+	if (!fs.existsSync(proposalsPath)) {
+		res.json({ generatedAt: null, totalProposals: 0, proposals: [] })
+		return
+	}
+	res.sendFile(proposalsPath)
 })
 
 // ---------------------------------------------------------------------------

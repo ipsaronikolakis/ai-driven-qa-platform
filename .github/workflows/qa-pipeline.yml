@@ -78,6 +78,19 @@ jobs:
           path: output/failure-analysis.json
           retention-days: 30
 
+      - name: Generate selector health report
+        if: always()
+        run: npm run selector-report || true
+
+      - name: Upload selector health report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: selector-health-report
+          path: output/selector-health.html
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Post PR comment
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -118,6 +131,37 @@ jobs:
             } catch {
               body += '_Could not read pipeline results — check the [workflow logs](' + runUrl + ')._\n';
             }
+
+            // ── Unstable selectors ─────────────────────────────────────────────
+            try {
+              const health = JSON.parse(fs.readFileSync('output/selector-health.json', 'utf-8'));
+              const unstable = Object.entries(health)
+                .filter(([, rec]) => {
+                  const r = rec;
+                  const total = r.passes + r.failures;
+                  return total >= 3 && r.failures / total > 0.2;
+                })
+                .map(([sel]) => sel);
+              if (unstable.length > 0) {
+                body += '\n### ⚠️ Unstable Selectors\n\n';
+                for (const sel of unstable) body += `- \`${sel}\`\n`;
+              }
+            } catch { /* no health data yet */ }
+
+            // ── [HEALED] selector annotations ──────────────────────────────────
+            try {
+              const actionsSource = fs.readFileSync('src/actions/index.ts', 'utf-8');
+              const healedLines = actionsSource
+                .split('\n')
+                .filter(l => l.includes('// HEALED:'));
+              if (healedLines.length > 0) {
+                body += '\n### [HEALED] Selectors in this PR\n\n';
+                body += '> These selectors were auto-replaced by the healing engine and require human review.\n\n';
+                for (const line of healedLines) {
+                  body += `- \`${line.trim()}\`\n`;
+                }
+              }
+            } catch { /* non-fatal */ }
 
             body += `\n[📊 View full report](${runUrl})`;
 

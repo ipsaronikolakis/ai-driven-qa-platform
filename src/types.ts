@@ -5,6 +5,8 @@
 export interface BDDStep {
   keyword: 'Given' | 'When' | 'And' | 'But' | 'Then';
   text: string;
+  /** 1-based line number in the source .feature file. */
+  line?: number;
 }
 
 export interface ParsedScenario {
@@ -73,10 +75,18 @@ export interface TestAction {
   source?: 'vocabulary' | 'llm';
 }
 
+export interface PlanValidation {
+  valid: boolean;
+  warnings: string[];
+  unknownSelectors: string[];
+}
+
 export interface TestPlan {
   scenarioName: string;
   url: string;
   actions: TestAction[];
+  /** Populated by validatePlan() after plan generation — cross-references selectors against page model. */
+  validation?: PlanValidation;
 }
 
 // ============================================================
@@ -125,4 +135,10 @@ export interface RunResult {
   failedCount: number;
   durationMs: number;
   specFilePath: string;
+  /**
+   * True when Playwright itself crashed before executing any tests
+   * (e.g. compilation error, missing module, config error).
+   * False means tests ran and some/all failed.
+   */
+  crashedBeforeTests?: boolean;
 }

@@ -45,6 +45,16 @@ export function runSpecs(generatedList: GeneratedCode[]): RunResult {
   // Read actual counts from the JSON reporter — more accurate than exit code alone
   const counts = readCountsFromReport(PW_JSON_REPORT, specPaths);
 
+  // Distinguish crash from test failure:
+  // A crash is when Playwright exits non-zero but ran zero tests
+  // (compilation error, missing module, config error, etc.)
+  const crashedBeforeTests = exitCode !== 0 && counts.total === 0;
+  if (crashedBeforeTests) {
+    const errorHint = detectCrashReason(stderr, stdout);
+    console.error(`[Runner] Playwright crashed before executing any tests. ${errorHint}`);
+    console.error('[Runner] This is a configuration/compilation error, not a test failure.');
+  }
+
   return {
     passed: exitCode === 0,
     total: counts.total,
@@ -52,6 +62,7 @@ export function runSpecs(generatedList: GeneratedCode[]): RunResult {
     failedCount: counts.failed,
     durationMs,
     specFilePath: specPaths.join(', '),
+    crashedBeforeTests,
   };
 }
 
@@ -67,6 +78,23 @@ export function runSpec(generated: GeneratedCode): RunResult {
 // ---------------------------------------------------------------------------
 
 interface Counts { total: number; passed: number; failed: number }
+
+const CRASH_PATTERNS: Array<{ re: RegExp; label: string }> = [
+  { re: /SyntaxError/,            label: 'Syntax error in generated spec' },
+  { re: /Cannot find module/,     label: 'Missing module — check imports' },
+  { re: /TypeScript diagnostics/, label: 'TypeScript compilation error' },
+  { re: /ENOENT/,                 label: 'File not found' },
+  { re: /No tests found/,         label: 'No tests matched the spec paths' },
+  { re: /playwright\.config/,     label: 'Playwright config error' },
+]
+
+function detectCrashReason(stderr: string, stdout: string): string {
+  const combined = stderr + '\n' + stdout;
+  for (const { re, label } of CRASH_PATTERNS) {
+    if (re.test(combined)) return `Likely cause: ${label}.`;
+  }
+  return 'Check the output above for details.';
+}
 
 function readCountsFromReport(reportPath: string, specPaths: string[]): Counts {
   if (!fs.existsSync(reportPath)) {

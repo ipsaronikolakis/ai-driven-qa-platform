@@ -386,9 +386,11 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 ---
 
-### Phase 5 — Service Hardening & Reliability Testing  *(current priority)*
+### Phase 5 — Service Hardening & User Acceptance Testing  *(current priority)*
 
-> Goal: Make the platform robust, reliable, and confidently testable against multiple real apps — not just the demo site. Nothing gets demonstrated or onboarded to a real product area until this phase is complete.
+> Goal: Exercise the platform as a real user — find behavioral gaps, rough edges, and anything that does not meet the standards set in this document. Fix what breaks. Only after this phase is complete is the platform ready to be demonstrated or onboarded to a real product area.
+>
+> This is **not** about writing automated tests. It is about getting hands dirty: using the UI, triggering CI runs, observing real behavior, and recording what needs fixing.
 
 ---
 
@@ -401,155 +403,138 @@ Two completely separate Playwright contexts exist and must not be confused:
 
 | Context | What it is | Used where |
 |---------|-----------|-----------|
-| **Playwright MCP** | Anthropic's MCP server — gives Claude Code interactive browser control during dev/demo sessions | Local only, when talking to the AI assistant |
-| **Platform Playwright** | `npx playwright test` — runs generated `.spec.ts` files | Every pipeline run, every CI push |
+| **Playwright MCP** | Anthropic's MCP server — gives Claude Code interactive browser control during dev/demo sessions with the AI assistant | Local only, when talking to Claude Code |
+| **Platform Playwright** | `npx playwright test` — runs generated `.spec.ts` files | Every pipeline run and every CI push |
 
-The Playwright MCP never runs in CI and is not part of the platform. It is Claude's tool, not the platform's.
+The Playwright MCP never runs in CI and is not part of the platform. It is Claude's tool, not the platform's. The "Run Pipeline" button in the Web UI and every CI job both use `npx playwright test` exclusively.
 
 **Definition of Done:**
 
-- [ ] A "Two Playwright Contexts" table added to `architecture/05-ci-cd.md` confirming Playwright MCP plays no role in CI
-- [ ] A note added to `architecture/04-web-ui.md` clarifying that "Run Pipeline" triggers `npx playwright test`, not the Playwright MCP
-- [ ] A FAQ entry added to the architecture docs: "Can I use Playwright MCP in CI?" → No, and you don't need to
+- [ ] A "Two Playwright Contexts" table added to `architecture/05-ci-cd.md`
+- [ ] A clarifying note added to `architecture/04-web-ui.md` on what Playwright is invoked by "Run Pipeline"
 
 ---
 
-#### 5.1 Unit Test Coverage — All Subsystems
+#### 5.1 User Acceptance Testing — Web UI
+
+**Status:** ⬜ Not started
+**Severity:** 🔴 Critical
+
+Walk through every feature of the Web UI as a user. For each item, record what happened, whether it met the expected standard, and any issue found. Issues get added to IMPROVEMENTS.md as new fix items.
+
+**How to run:** `npm run serve` → open `http://localhost:3000`
+
+| # | Action | Expected behavior | Standard met? | Issue found |
+|---|--------|------------------|---------------|-------------|
+| 1 | Open the UI cold | Loads instantly; editor shows placeholder or last-used file | ⬜ | |
+| 2 | Select a `.feature` file from the picker | File content loads into the Monaco editor correctly | ⬜ | |
+| 3 | Type a BDD keyword (`When `) in the editor | Autocomplete dropdown appears with vocabulary suggestions | ⬜ | |
+| 4 | Filter autocomplete by typing partial text | List narrows to matching terms only | ⬜ | |
+| 5 | Select a suggestion with Enter | Term inserted at cursor; no duplicate text | ⬜ | |
+| 6 | Edit the scenario and press Ctrl+S | File saved; no data loss; confirmation visible | ⬜ | |
+| 7 | Click the Lint button | Warnings appear in the Lint Output tab; canonical suggestions shown | ⬜ | |
+| 8 | Click Lint on a valid scenario | "No warnings — all steps canonical" message shown | ⬜ | |
+| 9 | Click Run Pipeline | Status badge changes to "Running"; SSE log starts streaming immediately | ⬜ | |
+| 10 | Watch the run to completion | Every stage logs output; status badge turns green (pass) or red (fail) | ⬜ | |
+| 11 | Click "View Report" after a passing run | Playwright HTML report opens in a new tab with correct results | ⬜ | |
+| 12 | Check the Selector Health tab after a run | Table shows selectors with run/fail counts; unstable ones highlighted | ⬜ | |
+| 13 | Check the Page Model info bar | Shows element count, testid coverage %, unstable selector count with correct colour coding | ⬜ | |
+| 14 | Check the Feedback tab (after `npm run feedback:update`) | Proposals shown with priority pills and evidence | ⬜ | |
+| 15 | Check the Heal Proposals tab (after `npm run heal`) | Proposals shown with old/new selector and confidence % | ⬜ | |
+| 16 | Enable `--fresh` checkbox and run | Run completes; all caches bypassed (log shows no `[CACHE HIT]` lines) | ⬜ | |
+| 17 | Click Stop during a run | Pipeline subprocess killed; status resets to Idle | ⬜ | |
+| 18 | Run with a scenario that has unrecognised steps | Lint warnings in console; run still proceeds or fails with a clear message | ⬜ | |
+| 19 | Load "All files" from the picker | Read-only summary of all features and scenarios shown | ⬜ | |
+| 20 | Reload the page mid-run | Graceful handling — no zombie process left running | ⬜ | |
+
+**Definition of Done:**
+
+- [ ] All 20 items walked through and Standard met? column filled in
+- [ ] Every `Issue found` entry has a corresponding fix item added to IMPROVEMENTS.md
+- [ ] No critical or high-severity issues remain open before moving to 5.2
+
+---
+
+#### 5.2 User Acceptance Testing — CI/CD
+
+**Status:** ⬜ Not started
+**Severity:** 🔴 Critical
+
+Exercise the full GitHub Actions workflow by pushing real branches and PRs. Observe what happens at each step. Record what does not behave as expected.
+
+**How to run:** Push a branch to GitHub → open a PR → watch the Actions tab.
+
+| # | Action | Expected behavior | Standard met? | Issue found |
+|---|--------|------------------|---------------|-------------|
+| 1 | Push a branch with a passing scenario | Both CI jobs run; all green; PR shows green check | ⬜ | |
+| 2 | Open a PR from that branch | A PR comment is posted automatically with pass/fail table and workflow link | ⬜ | |
+| 3 | Push again to the same PR branch | PR comment is updated (not duplicated) with the new run's results | ⬜ | |
+| 4 | Introduce a deliberate test failure (wrong assertion text) | CI fails; PR comment shows ❌ FAILED with `product_defect` category and suggestion | ⬜ | |
+| 5 | Introduce a broken selector | CI fails; PR comment shows `selector_drift` category | ⬜ | |
+| 6 | Download the `playwright-report` artifact | Opens correctly; shows traces and screenshots for failed tests | ⬜ | |
+| 7 | Download the `failure-analysis` artifact (on failure run) | JSON is readable; categories and suggestions are accurate | ⬜ | |
+| 8 | Remove `GEMINI_API_KEY` from repo secrets and push a vocab-only scenario | Pipeline completes successfully without the key | ⬜ | |
+| 9 | Push a scenario with an unrecognised step (no GEMINI_API_KEY set) | Pipeline fails with a clear error message, not a cryptic crash | ⬜ | |
+| 10 | Introduce a unit test failure | Job 1 fails; Job 2 does not start; PR blocked | ⬜ | |
+| 11 | Use `workflow_dispatch` to trigger a manual run | Run starts immediately from the Actions UI; completes normally | ⬜ | |
+| 12 | Check the selector-health-report artifact | HTML report downloads and renders correctly in a browser | ⬜ | |
+
+**Definition of Done:**
+
+- [ ] All 12 items walked through and Standard met? column filled in
+- [ ] Every `Issue found` entry has a corresponding fix item added to IMPROVEMENTS.md
+- [ ] No critical or high-severity issues remain open before moving to 5.3
+
+---
+
+#### 5.3 Multi-App Compatibility Testing
 
 **Status:** ⬜ Not started
 **Severity:** 🟠 High
 
-Current unit tests exist for some subsystems but several have no tests at all. Every subsystem must have meaningful test coverage before the service can be considered reliable.
+Point the platform at apps other than the demo site. Each will expose edge cases in the explorer, planner, and selector logic. The goal is to find and fix the top failure modes before a real product is onboarded.
 
-| Subsystem | Current state | Gap |
-|-----------|-------------|-----|
-| BDD Parser | 🔄 Partial | Scenario Outline edge cases, malformed files |
-| Vocabulary Registry | 🔄 Partial | findClosest() ranking, version loading |
-| Vocabulary Linter | 🔄 Partial | --fix rewrites, lint-log output |
-| Planning Engine — deterministic | 🔄 Partial | All vocabulary step types covered |
-| Planning Engine — LLM path | ⬜ None | Mock Gemini responses, schema validation failures |
-| Code Generator | 🔄 Partial | escapeQuotes() edge cases, provenance header |
-| Spec Validator | ⬜ None | Syntax errors caught, valid specs pass |
-| Execution Runner | ⬜ None | crashedBeforeTests flag, count reading from JSON |
-| Failure Analyzer | ⬜ None | All 5 category classifications |
-| Selector Health | ⬜ None | Pass/fail accumulation, unstable threshold logic |
-| Feedback Aggregator | ⬜ None | Priority assignment, deduplication |
-| Heal Engine | ⬜ None | Jaccard scoring, stable selector protection, patch shape |
+| App | Type | URL | Status | Issues found |
+|-----|------|-----|--------|--------------|
+| the-internet.herokuapp.com | Baseline (multi-page, forms) | https://the-internet.herokuapp.com | ✅ Working | — |
+| TodoMVC (React) | SPA, client-side routing | https://todomvc.com/examples/react | ⬜ | |
+| Conduit (RealWorld app) | SPA with auth + API | https://demo.realworld.io | ⬜ | |
+| UI Testing Playground | Dynamic content, overlays | http://uitestingplayground.com | ⬜ | |
+| An app with no `data-testid` | Selector fallback stress test | TBD | ⬜ | |
 
 **Definition of Done:**
 
-- [ ] All 12 subsystems have unit tests covering their primary logic paths
-- [ ] LLM path tests use mock Gemini response fixtures — no real API calls in unit tests
-- [ ] A coverage threshold (e.g. 80% line coverage) set in Vitest config and enforced in CI
-- [ ] `npm run test:unit` passes with zero skipped tests
+- [ ] Pipeline run attempted against all 4 apps in the table
+- [ ] Each failure mode documented with root cause and a fix item added to IMPROVEMENTS.md
+- [ ] Top 3 failure modes fixed and re-tested before marking done
 
 ---
 
-#### 5.2 Integration Tests — Pipeline End-to-End
+#### 5.4 Behavioral Standards Audit
 
 **Status:** ⬜ Not started
 **Severity:** 🟠 High
 
-Full pipeline runs against controlled, predictable targets. Catches regressions that unit tests cannot (stage-to-stage data contracts, checkpoint behaviour, crash detection).
+After UAT sessions, compare observed behavior against the standards defined in this document and `architecture/`. Any gap is a fix item.
 
-| Scenario | Target | Status |
-|----------|--------|--------|
-| Happy path: login scenario | the-internet.herokuapp.com | 🔄 Manual only |
-| Broken selector recovery | Mock app with selector changes between runs | ⬜ |
-| LLM fallback path | Scenario with step not in vocabulary | ⬜ |
-| Crash detection | Intentionally malformed generated spec | ⬜ |
-| Multi-scenario feature file | Feature with 3+ scenarios | ⬜ |
-| Heal pipeline: proposal generation | Known-broken selector + re-explored app | ⬜ |
-| Heal pipeline: stable selector protection | Selector with ≥20 runs, ≤2% fail rate | ⬜ |
-| Cache hit / cache bypass (--fresh) | Any target | ⬜ |
-
-**Definition of Done:**
-
-- [ ] A lightweight local mock app exists (static HTML, predictable elements, no backend) used as an integration test target
-- [ ] Integration test scripts run the full pipeline against the mock app and assert on output shape (spec content, pass/fail counts, failure-analysis.json)
-- [ ] All scenarios in the table above have an automated test
-- [ ] Integration tests added to CI as a separate job running after unit tests
-
----
-
-#### 5.3 UI Tests — Web Interface
-
-**Status:** ⬜ Not started
-**Severity:** 🟠 High
-
-The Web UI has zero automated tests. Every interaction listed below must be covered.
-
-| Area | What to test | Status |
-|------|-------------|--------|
-| File picker | Load .feature file into editor, content appears correctly | ⬜ |
-| Monaco editor | Ctrl+S saves, content persists to disk | ⬜ |
-| Vocabulary autocomplete | Typing "When " triggers suggestions; selecting inserts canonical term | ⬜ |
-| Lint button | Warnings appear in Lint Output tab | ⬜ |
-| Run Pipeline button | SSE log streams, status badge transitions | ⬜ |
-| --fresh checkbox | Pipeline invoked with --fresh flag when checked | ⬜ |
-| Stop button | Pipeline subprocess killed, status resets | ⬜ |
-| Selector Health tab | Table renders correctly after pipeline run | ⬜ |
-| Feedback tab | Proposals render after `feedback:update` | ⬜ |
-| Heal Proposals tab | Proposals render after `heal` run | ⬜ |
-| Page Model info bar | Updates after pipeline run; colour coding reflects coverage | ⬜ |
+| Standard (from this doc) | Observed behavior | Gap? |
+|---|---|---|
+| Autocomplete triggers on BDD keywords, filters by typed text | | ⬜ |
+| Lint suggestions include closest canonical match | | ⬜ |
+| Generated specs always include provenance header | | ⬜ |
+| Cache hit logged as `[CACHE HIT]` | | ⬜ |
+| Crash distinguished from test failure in output | | ⬜ |
+| PR comment includes failure category + suggestion | | ⬜ |
+| Selector health updates after every run | | ⬜ |
+| Heal proposals never modify `generated/` directly | | ⬜ |
+| `--fresh` bypasses all caches | | ⬜ |
+| Pipeline exits 1 on any spec failure | | ⬜ |
 
 **Definition of Done:**
 
-- [ ] Playwright E2E tests written for all items in the table above
-- [ ] Tests use the mock app (from 5.2) as the pipeline target — fast, deterministic
-- [ ] UI tests added to CI: `npm run serve` started as a background service step, tests run against it, server torn down
-- [ ] UI tests run in under 60s total
-
----
-
-#### 5.4 Multi-App Compatibility
-
-**Status:** ⬜ Not started
-**Severity:** 🟠 High
-
-The platform has only ever been tested against one app. Each app type below will expose new edge cases in the explorer, planner, and selector logic.
-
-| App type | Status |
-|----------|--------|
-| the-internet.herokuapp.com (current demo) | ✅ Working |
-| Single-page app with client-side routing (e.g. TodoMVC, Conduit) | ⬜ |
-| App with dynamic / lazy-loaded content | ⬜ |
-| App with no `data-testid` attributes (selector fallback stress test) | ⬜ |
-| App requiring authentication with session state | ⬜ |
-| App with shadow DOM components | ⬜ |
-| App with iframes | ⬜ |
-
-**Definition of Done:**
-
-- [ ] Pipeline run successfully against at least 2 additional publicly accessible demo apps
-- [ ] Top 3 failure modes from multi-app testing documented and issues/tasks created to fix them
-- [ ] App compatibility assumptions documented in `architecture/02-components.md` (App Explorer section)
-
----
-
-#### 5.5 CI/CD Hardening
-
-**Status:** ⬜ Not started
-**Severity:** 🟡 Medium
-
-| Item | Status |
-|------|--------|
-| Unit tests run in CI, block merge on failure | ✅ Done |
-| Full pipeline runs in CI | ✅ Done |
-| Pipeline timeout configured | ✅ Done |
-| Playwright retries configured (retries: 1) | ✅ Done |
-| Integration test job in CI | ⬜ |
-| UI test job in CI | ⬜ |
-| Coverage threshold enforced in CI | ⬜ |
-| Parallel spec execution configured | ⬜ |
-| Pipeline run time baseline measured and monitored | ⬜ |
-
-**Definition of Done:**
-
-- [ ] Integration test job added to `.github/workflows/qa-pipeline.yml`
-- [ ] UI test job added (start server → run tests → tear down)
-- [ ] Coverage threshold check added to unit test job
-- [ ] Baseline pipeline run time measured and documented in `architecture/05-ci-cd.md`
+- [ ] All rows in the table filled in from direct observation
+- [ ] Every gap has a corresponding fix item in IMPROVEMENTS.md
+- [ ] All gaps resolved and re-verified
 
 ---
 
@@ -964,14 +949,13 @@ Track selector success/failure rate across runs over time.
 
 ## Prioritised Backlog
 
-### Now — Service Hardening & Reliability *(Phase 5)*
+### Now — Service Hardening & User Acceptance Testing *(Phase 5)*
 
-- [ ] 5.0 Playwright MCP vs Platform Playwright — add clarification to architecture docs
-- [ ] 5.1 Unit test coverage — fill gaps in all 12 subsystems; enforce coverage threshold in CI
-- [ ] 5.2 Integration tests — mock app target; automate all pipeline scenarios end-to-end
-- [ ] 5.3 UI tests — Playwright E2E for all Web UI interactions
-- [ ] 5.4 Multi-app compatibility — test against 2+ additional apps; document edge cases
-- [ ] 5.5 CI/CD hardening — integration + UI test jobs; coverage threshold; run time baseline
+- [ ] 5.0 Playwright MCP clarification — add "Two Playwright Contexts" to architecture docs
+- [ ] 5.1 UAT — Web UI — walk through all 20 UI scenarios; log every issue found
+- [ ] 5.2 UAT — CI/CD — push real branches/PRs; walk through all 12 CI scenarios; log every issue
+- [ ] 5.3 Multi-app compatibility — test against TodoMVC, Conduit, UI Testing Playground
+- [ ] 5.4 Behavioral standards audit — compare observed behavior against documented standards
 
 ### Done — Phase 1 (Critical Stability)
 

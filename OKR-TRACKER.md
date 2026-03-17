@@ -44,11 +44,10 @@ This work must be complete before the platform can be demonstrated, onboarded to
 | Phase 5 item | Status |
 |---|---|
 | 5.0 Playwright MCP clarification (architecture doc updates) | ⬜ Not started |
-| 5.1 Unit test coverage — all 12 subsystems | ⬜ Not started |
-| 5.2 Integration tests — pipeline E2E with mock app | ⬜ Not started |
-| 5.3 UI tests — Web interface Playwright E2E | ⬜ Not started |
-| 5.4 Multi-app compatibility — 2+ additional apps | ⬜ Not started |
-| 5.5 CI/CD hardening — integration + UI jobs, coverage threshold | ⬜ Not started |
+| 5.1 UAT — Web UI (20-item walkthrough, log all issues) | ⬜ Not started |
+| 5.2 UAT — CI/CD (12-item walkthrough via real PRs, log all issues) | ⬜ Not started |
+| 5.3 Multi-app compatibility (TodoMVC, Conduit, UI Testing Playground) | ⬜ Not started |
+| 5.4 Behavioral standards audit (observed vs documented standards) | ⬜ Not started |
 
 ---
 

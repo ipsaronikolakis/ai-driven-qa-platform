@@ -21,7 +21,7 @@ import { Page, expect } from '@playwright/test';
  * @param url   Full URL or path (resolved against baseURL in config).
  */
 export async function navigateTo(page: Page, url: string): Promise<void> {
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await page.goto(url, { waitUntil: 'load' });
 }
 
 // ---------------------------------------------------------------------------
@@ -45,6 +45,8 @@ export async function fillInput(page: Page, selector: string, value: string): Pr
  */
 export async function clickElement(page: Page, selector: string): Promise<void> {
   await page.click(selector);
+  // If the click triggered a navigation, wait for the new page to finish loading.
+  await page.waitForLoadState('load').catch(() => { /* no navigation — ignore */ });
 }
 
 /**

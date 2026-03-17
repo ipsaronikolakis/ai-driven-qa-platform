@@ -55,7 +55,7 @@ export async function exploreWithScript(steps: ExplorationStep[]): Promise<PageM
         case 'navigate': {
           const url = step.value;
           if (!url) throw new Error(`Exploration step ${i + 1}: 'navigate' requires a value (URL).`);
-          await withRetry(() => page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 }));
+          await withRetry(() => page.goto(url, { waitUntil: 'load', timeout: 30000 }));
           break;
         }
 
@@ -184,7 +184,8 @@ async function capturePageElements(
         (el as HTMLInputElement).value?.trim() ||
         el.getAttribute('aria-label')?.trim() ||
         '';
-      return text.substring(0, 150);
+      const MAX = 150;
+      return text.length > MAX ? text.substring(0, MAX) + '…' : text;
     }
 
     /**

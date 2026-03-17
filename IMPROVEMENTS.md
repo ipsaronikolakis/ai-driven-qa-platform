@@ -318,7 +318,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 | Severity | Flaw                                                           | Status |
 | -------- | -------------------------------------------------------------- | ------ |
-| 🟠       | Single-scenario only — subsequent `Scenario:` blocks overwrite | ⬜     |
+| 🟠       | Single-scenario only — subsequent `Scenario:` blocks overwrite | ✅     |
 | 🟡       | `line.startsWith('#')` misidentifies steps containing `#`      | ⬜     |
 | 🟡       | Assumes keywords are always the first word                     | ⬜     |
 | 🟢       | No line numbers in error messages                              | ⬜     |
@@ -329,10 +329,10 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | -------- | ---------------------------------------------------------------- | ------ |
 | 🔴       | Selector fallback is bare tag name (`button`, `h2`) — non-unique | ✅     |
 | 🔴       | Only explores the initial URL — post-login pages invisible       | ✅     |
-| 🟠       | `waitUntil: 'domcontentloaded'` misses JS-rendered content       | ⬜     |
-| 🟠       | Duplicate DOM IDs treated as unique                              | ⬜     |
-| 🟠       | Text truncated at 100 chars with no marker                       | ⬜     |
-| 🟠       | No retry on navigation failure                                   | ⬜     |
+| 🟠       | `waitUntil: 'domcontentloaded'` misses JS-rendered content       | ✅     |
+| 🟠       | Duplicate DOM IDs treated as unique                              | ✅     |
+| 🟠       | Text truncated at 100 chars with no marker                       | ✅     |
+| 🟠       | No retry on navigation failure                                   | ✅     |
 | 🟡       | Tailwind numeric-prefix classes filtered out                     | ⬜     |
 | 🟡       | Icon-only links silently dropped                                 | ⬜     |
 | 🟡       | Browser not guaranteed closed if `page.evaluate()` throws        | ✅     |
@@ -343,11 +343,11 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | -------- | -------------------------------------------------------------- | ------ |
 | 🔴       | Non-deterministic output — same input, different plan each run | ✅     |
 | 🔴       | No validation that plan selectors exist in the page model      | ✅     |
-| 🟠       | No retry / exponential backoff on API errors                   | ⬜     |
+| 🟠       | No retry / exponential backoff on API errors                   | ✅     |
 | 🟠       | LLM temperature not set — defaults to high creativity          | ✅     |
-| 🟠       | No caching — Gemini called on every run for identical input    | ⬜     |
+| 🟠       | No caching — Gemini called on every run for identical input    | ✅     |
 | 🟡       | Prompt injection: raw BDD step text inserted unsanitized       | ⬜     |
-| 🟡       | No JSON schema enforcement (`response_schema`)                 | ⬜     |
+| 🟡       | No JSON schema enforcement (`response_schema`)                 | ✅     |
 | 🟡       | Full Gemini response logged on error — potential PII exposure  | ⬜     |
 
 ### Stage 4 — Code Generator
@@ -355,30 +355,30 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | Severity | Flaw                                                                   | Status |
 | -------- | ---------------------------------------------------------------------- | ------ |
 | 🟠       | No syntax check before writing spec to disk                            | ✅     |
-| 🟠       | `escapeQuotes()` misses backslash sequences                            | ⬜     |
-| 🟠       | `fill()` emitted with no guard against non-input selectors             | ⬜     |
-| 🟡       | `waitForTimeout()` value not validated — `"abc"` produces invalid code | ⬜     |
-| 🟡       | `assert_url` regex has no anchors                                      | ⬜     |
-| 🟡       | No `waitForLoadState` between navigation and next action               | ⬜     |
+| 🟠       | `escapeQuotes()` misses backslash sequences                            | ✅     |
+| 🟠       | `fill()` emitted with no guard against non-input selectors             | 🚫     |
+| 🟡       | `waitForTimeout()` value not validated — `"abc"` produces invalid code | ✅     |
+| 🟡       | `assert_url` regex has no anchors                                      | ✅     |
+| 🟡       | No `waitForLoadState` between navigation and next action               | ✅     |
 
 ### Stage 5 — Runner
 
 | Severity | Flaw                                                             | Status |
 | -------- | ---------------------------------------------------------------- | ------ |
 | 🟠       | Command built by string concatenation — shell injection risk     | ✅     |
-| 🟠       | 60-second hardcoded timeout                                      | ⬜     |
-| 🟠       | `err.status ?? 1` — exit code 0 coerced to 1 on unexpected error | ⬜     |
-| 🟡       | `total: 1` hardcoded — wrong for multi-test specs                | ⬜     |
+| 🟠       | 60-second hardcoded timeout                                      | ✅     |
+| 🟠       | `err.status ?? 1` — exit code 0 coerced to 1 on unexpected error | ✅     |
+| 🟡       | `total: 1` hardcoded — wrong for multi-test specs                | ✅     |
 | 🟡       | No distinction between Playwright crash and test failure         | ⬜     |
 
 ### Config & Architecture
 
 | Severity | Flaw                                                                | Status |
 | -------- | ------------------------------------------------------------------- | ------ |
-| 🟠       | `trace: 'on-first-retry'` with `retries: 0` — traces never captured | ⬜     |
-| 🟡       | `testDir: './generated'` is relative path                           | ⬜     |
-| 🟡       | No intermediate state saved to disk                                 | ⬜     |
-| 🟡       | No multi-scenario support end-to-end                                | ⬜     |
+| 🟠       | `trace: 'on-first-retry'` with `retries: 0` — traces never captured | ✅     |
+| 🟡       | `testDir: './generated'` is relative path                           | ✅     |
+| 🟡       | No intermediate state saved to disk                                 | ✅     |
+| 🟡       | No multi-scenario support end-to-end                                | ✅     |
 
 ---
 
@@ -779,6 +779,7 @@ Track selector success/failure rate across runs over time.
 | **Runner safety**          | `execSync` + string concat — shell injection risk           | `execFileSync` + argument array                                              | ✅ Done 2026-03-16 |
 | **Generated code syntax**  | Checked at runtime only                                     | Pre-write `ts.transpileModule` validation in `spec-validator.ts`             | ✅ Done 2026-03-16 |
 | **Test ownership**         | Grey zone — generated but manually patched                  | DO NOT EDIT header + pre-commit hook; provenance fields; fixes via Action Library | ✅ Done 2026-03-17 |
+| **Navigation wait**        | `waitUntil: 'domcontentloaded'` — misses late-rendering JS  | `waitUntil: 'load'` in explorer + action library; `waitForLoadState` post-click | ✅ Done 2026-03-17 |
 | **Test data**              | Assumed data exists in environment                          | Tests own their data via API setup/teardown                                  | ⬜                 |
 | **Vocabulary**             | Free-form natural language, LLM interprets everything       | `vocabulary/core.yaml` v1.1.0; linter with suggestions; 100% login coverage  | ✅ Done 2026-03-16 |
 | **Failure classification** | Binary pass/fail — no root cause                            | 5-category failure analysis with suggested fix per failure                   | ✅ Done 2026-03-16 |

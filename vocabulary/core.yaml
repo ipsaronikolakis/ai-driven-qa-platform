@@ -15,6 +15,17 @@ version: 1.1.0
 #   1.1.0 — Added page-navigation assertion and individual field entry actions
 #           (evidence: login.feature bootstrapping run 2026-03-16)
 
+changelog:
+  - version: 1.1.0
+    date: 2026-03-16
+    changes:
+      - Added page-navigation assertion (assertOnPage)
+      - Added individual field entry actions (fillUsername, fillPassword, fillInput)
+  - version: 1.0.0
+    date: 2026-03-16
+    changes:
+      - Initial core vocabulary with 5 actions and 3 assertions
+
 actions:
   - name: "login as {role}"
     maps_to: loginAs

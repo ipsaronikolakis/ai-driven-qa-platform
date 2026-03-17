@@ -47,6 +47,10 @@ export interface PageModel {
   url: string;
   title: string;
   elements: PageElement[];
+  /** Fraction of elements (0-1) whose best selector uses data-testid/data-cy/data-test. */
+  testidCoverage?: number;
+  /** Selectors present in the first capture but absent in a second pass 500ms later — potentially unstable. */
+  unstableSelectors?: string[];
 }
 
 // ============================================================

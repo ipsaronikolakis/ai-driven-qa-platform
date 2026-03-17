@@ -83,6 +83,8 @@ export async function exploreWithScript(steps: ExplorationStep[]): Promise<PageM
           const model = await capturePageElements(page, captureUrl);
           results.push(model);
           console.log(`[Explorer] Captured ${model.elements.length} elements from ${captureUrl}`);
+          const pct = Math.round((model.testidCoverage ?? 0) * 100);
+          console.log(`[Explorer] data-testid coverage: ${pct}% (${model.unstableSelectors?.length ?? 0} unstable selector(s))`);
           break;
         }
 
@@ -327,7 +329,26 @@ async function capturePageElements(
     });
   }
 
-  return { url, title, elements };
+  const testidCount = elements.filter(e => e.selector.startsWith('[data-testid') || e.selector.startsWith('[data-cy') || e.selector.startsWith('[data-test')).length;
+  const testidCoverage = elements.length > 0 ? testidCount / elements.length : 0;
+
+  // Stability check: re-verify each selector 500ms later
+  // Selectors that are no longer unique may belong to dynamic elements
+  await page.waitForTimeout(500);
+  const unstableSelectors: string[] = [];
+  for (const el of elements) {
+    try {
+      const count = await page.locator(el.selector).count();
+      if (count !== 1) {
+        unstableSelectors.push(el.selector);
+        console.warn(`[Explorer] Unstable selector (count=${count} on re-check): ${el.selector}`);
+      }
+    } catch {
+      unstableSelectors.push(el.selector);
+    }
+  }
+
+  return { url, title, elements, testidCoverage, unstableSelectors };
 }
 
 /**

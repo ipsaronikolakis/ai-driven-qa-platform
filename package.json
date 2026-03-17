@@ -11,6 +11,8 @@
     "selector-report": "ts-node src/health/report-cli.ts",
     "vocab:analyze": "ts-node src/vocabulary/vocab-analyze.ts",
     "heal": "ts-node src/healer/index.ts",
+    "feedback:update": "ts-node src/feedback/proposals.ts",
+    "review-proposals": "ts-node src/feedback/review-cli.ts",
     "serve": "ts-node src/server/server.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "test:unit": "npx playwright test src/bdd-parser/__tests__ src/vocabulary/__tests__ src/planner/__tests__ src/code-generator/__tests__ src/analyzer/__tests__ src/app-explorer/__tests__",

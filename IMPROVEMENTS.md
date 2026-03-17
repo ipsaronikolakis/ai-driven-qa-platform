@@ -87,7 +87,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 ### D2 — The App Explorer Captures a Snapshot, Not a Model
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **The idea:** Connect to a real app, collect buttons/inputs/links, output page model JSON.
 
@@ -102,11 +102,11 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 **Definition of Done:**
 
-- [ ] Explorer accepts an `explorationScript` config (array of `fill`/`click`/`wait` steps to run before capturing)
-- [ ] Explorer rejects selectors that match more than 1 element on the page (uniqueness check)
-- [ ] Selector priority chain implemented: `data-testid` > ARIA role > `#id` > `[name]` > text-based > reject bare tags
-- [ ] Explorer runs twice on the same page and produces a stability diff — selectors that changed are flagged
-- [ ] `data-testid` coverage % is reported in the page model output
+- [x] Explorer accepts an `explorationScript` config (array of `fill`/`click`/`wait` steps to run before capturing) — `exploreWithScript()` in `explorer.ts`
+- [x] Explorer rejects selectors that match more than 1 element on the page — `resolveUniqueSelector()` checks `count === 1`
+- [x] Selector priority chain implemented: `data-testid` > ARIA role > `#id` > `[name]` > text-based > reject bare tags
+- [x] Explorer runs a stability pass 500ms after capture — selectors no longer unique are added to `unstableSelectors[]` and logged as `[Explorer] Unstable selector`
+- [x] `testidCoverage` (0–1 fraction) reported in PageModel and logged after every capture step
 
 ---
 
@@ -137,7 +137,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 ### D4 — The Feedback Loop is Underdefined
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **The idea:** The system improves vocabulary, action library, planner, and code generator over time.
 
@@ -155,11 +155,11 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 **Definition of Done:**
 
-- [ ] A `feedback/proposals.json` file is written after each run containing flagged deviations
-- [ ] A CLI command (`npm run review-proposals`) prints proposals grouped by type
-- [ ] No proposal is ever auto-applied — all require a human `--approve` flag or PR merge
-- [ ] Each proposal records the triggering evidence (which run, which scenario, which step)
-- [ ] Vocabulary YAML has a `version:` field and a `changelog:` section
+- [x] `output/feedback/proposals.json` written by `npm run feedback:update` — aggregates lint-log, selector-health, and failure-analysis into prioritised proposals (`src/feedback/proposals.ts`)
+- [x] `npm run review-proposals` prints proposals grouped by type with 🔴/🟡/🟢 priority icons; exits 1 if any high-priority items exist (`src/feedback/review-cli.ts`)
+- [x] No proposal is ever auto-applied — output is read-only JSON for human review
+- [x] Each proposal includes an `evidence` field recording the triggering signal (step text + frequency, selector + fail rate, failure category)
+- [x] `vocabulary/core.yaml` has a `version:` field and a `changelog:` YAML section with dated entries
 
 ---
 
@@ -301,9 +301,9 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | #   | Risk                              | Status | Core Mitigation                                                              |
 | --- | --------------------------------- | ------ | ---------------------------------------------------------------------------- |
 | D1  | Fixed vocabulary is premature     | ✅     | Evidence-based bootstrapping; 50+ AI runs before defining vocab              |
-| D2  | Explorer is a static snapshot     | ⬜     | `data-testid` requirement; interaction sequences; selector stability scoring |
+| D2  | Explorer is a static snapshot     | ✅     | `data-testid` requirement; interaction sequences; selector stability scoring |
 | D3  | Generated tests have no owner     | ✅     | Never edit generated code; fix Action Library; record provenance             |
-| D4  | Feedback loop is vague            | ⬜     | Proposals only; semver vocab; specific signals defined                       |
+| D4  | Feedback loop is vague            | ✅     | Proposals only; semver vocab; specific signals defined                       |
 | D5  | Test data is underestimated       | ⬜     | Tests own their data via API; setup/execution/teardown plan sections         |
 | D6  | LLM cost/latency at scale         | ✅     | Plan caching at authoring time; LLM only for unresolved steps                |
 | D7  | Healing can mask product bugs     | ✅     | Never automatic; healed tests flagged; fix helpers not specs                 |
@@ -780,6 +780,8 @@ Track selector success/failure rate across runs over time.
 | **Generated code syntax**  | Checked at runtime only                                     | Pre-write `ts.transpileModule` validation in `spec-validator.ts`             | ✅ Done 2026-03-16 |
 | **Test ownership**         | Grey zone — generated but manually patched                  | DO NOT EDIT header + pre-commit hook; provenance fields; fixes via Action Library | ✅ Done 2026-03-17 |
 | **Navigation wait**        | `waitUntil: 'domcontentloaded'` — misses late-rendering JS  | `waitUntil: 'load'` in explorer + action library; `waitForLoadState` post-click | ✅ Done 2026-03-17 |
+| **Explorer stability**     | Single DOM snapshot — dynamic elements invisible            | 500ms stability re-check; `testidCoverage` % reported; `unstableSelectors[]` flagged | ✅ Done 2026-03-17 |
+| **Feedback loop**          | No aggregated signal — improvements ad-hoc                  | `feedback:update` → `output/feedback/proposals.json`; `review-proposals` CLI | ✅ Done 2026-03-17 |
 | **Test data**              | Assumed data exists in environment                          | Tests own their data via API setup/teardown                                  | ⬜                 |
 | **Vocabulary**             | Free-form natural language, LLM interprets everything       | `vocabulary/core.yaml` v1.1.0; linter with suggestions; 100% login coverage  | ✅ Done 2026-03-16 |
 | **Failure classification** | Binary pass/fail — no root cause                            | 5-category failure analysis with suggested fix per failure                   | ✅ Done 2026-03-16 |

@@ -412,6 +412,7 @@ The Playwright MCP never runs in CI and is not part of the platform. It is Claud
 
 - [ ] A "Two Playwright Contexts" table added to `architecture/05-ci-cd.md`
 - [ ] A clarifying note added to `architecture/04-web-ui.md` on what Playwright is invoked by "Run Pipeline"
+- [ ] Evaluate whether [Browser DevTools MCP](https://github.com/serkan-ozal/browser-devtools-mcp) should replace Playwright MCP for Claude Code interactive sessions — key comparison points: token usage (~78% fewer tokens claimed), consistency, speed, and feature parity for the interactions used during UAT and debugging. If it wins, swap it in Claude Code MCP config and document the change.
 
 ---
 

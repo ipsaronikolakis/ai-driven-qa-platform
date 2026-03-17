@@ -1,6 +1,6 @@
 # OKR Tracker — Objective 5: AI-Driven QA Platform (POC to MVP)
 
-**Last updated:** 2026-03-17 (architecture docs + diagrams complete)
+**Last updated:** 2026-03-17 (architecture docs + diagrams complete; testing & hardening added as top priority)
 
 ---
 
@@ -20,13 +20,156 @@
 
 These are the highest-leverage actions needed to close remaining OKR gaps:
 
-1. **Schedule and run the live POC demo** — [QA Lead] Book a team or cross-team session; the demo content is ready. This unblocks KR 5.1 completion.
-2. **Publish findings and limitations to Confluence** — [QA Lead] Write up POC learnings, known gaps, and LLM fallback behaviour post-demo.
-3. **Publish the architecture docs to Confluence** — [QA Lead] The `architecture/` suite (5 docs + Mermaid diagrams) is complete in the repo; publish it to the agreed Confluence space.
-4. **Get Engineering stakeholder review on record** — [QA Lead + Eng] Schedule a review session for the architecture document; record sign-off.
-5. **Onboard at least one real product area** — [QA Lead + Eng] Replace the-internet.herokuapp.com demo scenarios with real product scenarios to satisfy KR 5.3 and KR 5.4 delivery requirements.
-6. **Define and implement stakeholder results reporting** — [QA Lead + Eng] Establish how pass/fail results are surfaced to stakeholders beyond PR comments.
-7. **Write the 2027 roadmap document** — [QA Lead] Cover second-phase subsystems with effort estimates, dependency mapping, and Engineering collaboration proposal.
+1. **[NEW] Clarify and document Playwright MCP vs platform Playwright** — [Eng] Document the distinction between the two Playwright contexts so the team is unambiguous: (a) Playwright MCP = Claude Code's interactive browser tool used only during dev/demo sessions with the AI assistant, never in CI/CD; (b) Platform Playwright = `npx playwright test` running generated `.spec.ts` files, used in every pipeline run and in CI. Add a short explainer to `architecture/05-ci-cd.md` and `architecture/04-web-ui.md`.
+2. **[NEW] Comprehensive service testing — make it robust and reliable** — [Eng] This is the current #1 engineering priority. See the full breakdown in the "Service Hardening & Testing" section below.
+3. **Schedule and run the live POC demo** — [QA Lead] Book a team or cross-team session; the demo content is ready. This unblocks KR 5.1 completion.
+4. **Publish findings and limitations to Confluence** — [QA Lead] Write up POC learnings, known gaps, and LLM fallback behaviour post-demo.
+5. **Publish the architecture docs to Confluence** — [QA Lead] The `architecture/` suite (5 docs + Mermaid diagrams) is complete in the repo; publish it to the agreed Confluence space.
+6. **Get Engineering stakeholder review on record** — [QA Lead + Eng] Schedule a review session for the architecture document; record sign-off.
+7. **Onboard at least one real product area** — [QA Lead + Eng] Replace the-internet.herokuapp.com demo scenarios with real product scenarios to satisfy KR 5.3 and KR 5.4 delivery requirements.
+8. **Define and implement stakeholder results reporting** — [QA Lead + Eng] Establish how pass/fail results are surfaced to stakeholders beyond PR comments.
+9. **Write the 2027 roadmap document** — [QA Lead] Cover second-phase subsystems with effort estimates, dependency mapping, and Engineering collaboration proposal.
+
+---
+
+---
+
+## 🔧 Service Hardening & Testing  *(pre-delivery blocker)*
+
+**Status: ⬜ Not started**
+
+This work is a prerequisite before the platform can be confidently demonstrated, onboarded to a real product area, or presented to Engineering stakeholders. A service that isn't robustly tested against multiple real apps cannot be considered delivery-ready.
+
+---
+
+### 1. Playwright MCP Clarification  *(documentation task)*
+
+| Item | Status |
+|------|--------|
+| Document the distinction: Playwright MCP (Claude's interactive tool) vs Platform Playwright (`npx playwright test`) | ⬜ Not started |
+| Add explainer to `architecture/04-web-ui.md` — how the pipeline run is triggered, what Playwright is actually invoked | ⬜ Not started |
+| Add explainer to `architecture/05-ci-cd.md` — confirm Playwright MCP plays no role in CI/CD | ⬜ Not started |
+| Add a FAQ entry: "Can I use Playwright MCP in CI?" (answer: no, and you don't need to) | ⬜ Not started |
+
+**Action items:**
+- [ ] [Eng] Add a "Two Playwright Contexts" section to `architecture/05-ci-cd.md` explaining the distinction with a clear table.
+- [ ] [Eng] Add a note to `architecture/04-web-ui.md` clarifying that the "Run Pipeline" button triggers `npx playwright test` (not the Playwright MCP).
+
+---
+
+### 2. Unit Test Coverage — Platform Source Code
+
+Current unit tests exist but coverage is uneven. Every subsystem must have tests before the service is reliable.
+
+| Subsystem | Unit Tests | Status |
+|-----------|-----------|--------|
+| BDD Parser | Edge cases (multi-scenario, Scenario Outline, malformed files) | 🔄 Partial |
+| Vocabulary Registry | matchStep(), findClosest(), version loading | 🔄 Partial |
+| Vocabulary Linter | Warnings, --fix rewrites, lint-log output | 🔄 Partial |
+| Planning Engine — deterministic path | All vocabulary step types | 🔄 Partial |
+| Planning Engine — LLM path | Mock Gemini responses, schema validation | ⬜ Not started |
+| Code Generator | Spec structure, provenance header, escapeQuotes() | 🔄 Partial |
+| Spec Validator | Syntax errors caught before file write | ⬜ Not started |
+| Execution Runner | crashedBeforeTests flag, count reading from JSON report | ⬜ Not started |
+| Failure Analyzer | All 5 category classifications | ⬜ Not started |
+| Selector Health | Pass/fail accumulation, unstable threshold logic | ⬜ Not started |
+| Feedback Aggregator | Priority assignment, deduplication | ⬜ Not started |
+| Heal Engine | Jaccard scoring, stable selector protection, patch file shape | ⬜ Not started |
+
+**Action items:**
+- [ ] [Eng] Audit existing unit test coverage (`npm run test:unit`) and identify gaps.
+- [ ] [Eng] Write missing unit tests for Execution Runner, Failure Analyzer, Spec Validator, Selector Health, and Heal Engine.
+- [ ] [Eng] Add mock Gemini response fixtures for Planning Engine LLM path tests (no real API calls in unit tests).
+- [ ] [Eng] Set a coverage threshold in Vitest config and enforce it in CI.
+
+---
+
+### 3. Integration Tests — Pipeline End-to-End
+
+Full pipeline runs against controlled, predictable targets. These catch regressions that unit tests cannot.
+
+| Test scenario | Target app | Status |
+|--------------|-----------|--------|
+| Full pipeline: login scenario (happy path) | the-internet.herokuapp.com/login | 🔄 Manual only |
+| Full pipeline: broken selector recovery | Mock app with selector changes between runs | ⬜ Not started |
+| Full pipeline: LLM fallback path | Scenario with a step not in vocabulary | ⬜ Not started |
+| Full pipeline: crash detection (bad spec) | Intentionally malformed generated spec | ⬜ Not started |
+| Full pipeline: multi-scenario feature file | Feature with 3+ scenarios | ⬜ Not started |
+| Heal pipeline: proposal generation | Known-broken selector + re-explored app | ⬜ Not started |
+| Heal pipeline: stable selector protection | Selector with ≥20 runs, ≤2% fail rate | ⬜ Not started |
+
+**Action items:**
+- [ ] [Eng] Create a lightweight local mock app (static HTML, no backend required) with known, predictable elements for integration test targets.
+- [ ] [Eng] Write integration test scripts (or npm scripts) that run the full pipeline against the mock app and assert on outputs (generated spec content, pass/fail counts, failure-analysis.json shape).
+- [ ] [Eng] Add an integration test run to CI as a separate job that runs after unit tests.
+
+---
+
+### 4. UI Testing — Web Interface
+
+The Web UI (Monaco editor, run controls, bottom tabs, SSE stream) needs its own test coverage.
+
+| Area | What to test | Status |
+|------|-------------|--------|
+| File picker | Load .feature file into editor | ⬜ Not started |
+| Monaco editor | Save with Ctrl+S, content persists to disk | ⬜ Not started |
+| Vocabulary autocomplete | Typing "When " triggers suggestions; selecting inserts canonical term | ⬜ Not started |
+| Lint button | Warnings appear in Lint Output tab | ⬜ Not started |
+| Run Pipeline button | SSE log streams, status badge updates | ⬜ Not started |
+| --fresh checkbox | Pipeline runs with --fresh flag when checked | ⬜ Not started |
+| Stop button | Pipeline subprocess is killed | ⬜ Not started |
+| Selector Health tab | Table renders after pipeline run | ⬜ Not started |
+| Feedback tab | Proposals render after feedback:update | ⬜ Not started |
+| Heal Proposals tab | Proposals render after heal run | ⬜ Not started |
+| Page Model info bar | Updates after pipeline run, colour coding correct | ⬜ Not started |
+
+**Action items:**
+- [ ] [Eng] Write Playwright E2E tests for the Web UI using the mock app as the pipeline target (so tests are fast and deterministic).
+- [ ] [Eng] Cover: file load/save, autocomplete trigger + selection, lint button, full run + SSE stream completion, all four bottom tabs.
+- [ ] [Eng] Add UI tests to CI (requires `npm run serve` to be started as a background service step before the tests run).
+
+---
+
+### 5. Multi-App Compatibility
+
+The platform must work against apps other than the-internet.herokuapp.com. Each app will expose new edge cases in the explorer, planner, and selector logic.
+
+| App type | Status |
+|----------|--------|
+| the-internet.herokuapp.com (current demo target) | ✅ Working |
+| Single-page app (React/Vue with client-side routing) | ⬜ Not tested |
+| App with dynamic content / lazy-loaded elements | ⬜ Not tested |
+| App with shadow DOM components | ⬜ Not tested |
+| App with no data-testid attributes (selector fallback stress test) | ⬜ Not tested |
+| App requiring authentication (session handling) | ⬜ Not tested |
+| App with iframes | ⬜ Not tested |
+
+**Action items:**
+- [ ] [Eng] Run the pipeline against at least 2 additional publicly accessible demo apps and document which edge cases break (e.g. TodoMVC, Conduit, Hacker News SPA).
+- [ ] [Eng] Identify the top 3 failure modes from multi-app testing and create issues/tasks to fix them before the real product onboarding.
+- [ ] [Eng] Document app compatibility assumptions in `architecture/02-components.md` (App Explorer section).
+
+---
+
+### 6. CI/CD Hardening
+
+| Item | Status |
+|------|--------|
+| Unit tests run in CI and block merge on failure | ✅ Done |
+| Full pipeline runs in CI | ✅ Done |
+| Pipeline timeout configured (120s per spec) | ✅ Done |
+| Integration tests run in CI | ⬜ Not started |
+| UI tests run in CI | ⬜ Not started |
+| Test coverage threshold enforced in CI | ⬜ Not started |
+| Flaky test detection (Playwright retries configured) | ✅ Done (retries: 1) |
+| Parallel spec execution | ⬜ Not configured |
+| Pipeline run time monitored / baseline established | ⬜ Not started |
+
+**Action items:**
+- [ ] [Eng] Add integration test job to `.github/workflows/qa-pipeline.yml`.
+- [ ] [Eng] Add UI test job (start server, run Playwright against it, tear down).
+- [ ] [Eng] Add coverage threshold check to unit test job.
+- [ ] [Eng] Measure and document baseline pipeline run time. Set an alert threshold.
 
 ---
 

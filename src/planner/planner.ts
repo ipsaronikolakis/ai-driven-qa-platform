@@ -96,8 +96,9 @@ export async function generateTestPlan(
 	try {
 		parsed = JSON.parse(text) as TestPlan
 	} catch (err) {
+		const preview = text.length > 300 ? text.slice(0, 300) + '… [truncated]' : text
 		throw new Error(
-			`Gemini returned unparsable JSON.\n\nRaw output:\n${text}\n\nParse error: ${err}`,
+			`Gemini returned unparsable JSON.\n\nRaw output (first 300 chars):\n${preview}\n\nParse error: ${err}`,
 		)
 	}
 

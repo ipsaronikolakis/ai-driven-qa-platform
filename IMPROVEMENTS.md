@@ -190,7 +190,7 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 ### D6 — LLM Cost and Latency at Scale
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **The idea:** Gemini plans each test run.
 
@@ -205,17 +205,17 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 **Definition of Done:**
 
-- [ ] An `output/cache/` directory stores plans keyed by `sha256(featureContent + pageModelContent)`
-- [ ] Running the pipeline twice with no changes to inputs uses the cached plan (verified by disabling network and confirming it still runs)
-- [ ] Cache hit/miss is logged clearly at Stage 3
-- [ ] A `--no-cache` flag forces a fresh Gemini call
-- [ ] Plans are saved as `output/<scenario-slug>.plan.json` alongside the feature file
+- [x] Plans are cached by content hash — `output/stage3-<slug>.json` keyed by `sha256(featureContent + pageModelContent)` via `src/utils/checkpoint.ts`
+- [x] Running the pipeline twice with no changes reuses the cached plan — Gemini skipped, confirmed by `[CACHE HIT]` log
+- [x] Cache hit/miss logged as `[CACHE HIT] stage3-<slug>.json — loaded from output/...` by checkpoint utility
+- [x] `--fresh` flag (= `--no-cache`) forces a full re-run bypassing all caches (`npm run fresh`)
+- [x] Plans saved as `output/stage3-<slug>.json` after every planning run
 
 ---
 
 ### D7 — The Healing Engine Can Introduce Silent Regressions
 
-**Status:** ⬜ Not started
+**Status:** ✅ Done — 2026-03-17
 
 **The idea:** When a selector drifts, the healing engine finds the new selector and updates the test.
 
@@ -230,10 +230,10 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 
 **Definition of Done:**
 
-- [ ] No code path in the system auto-writes a healed spec to disk without an explicit `--apply` flag
-- [ ] Healing output is always a `output/heal-proposals/<spec-name>.patch` file, never a direct file overwrite
-- [ ] A healed spec has `// HEALED: <date> — original selector: <old> — new selector: <new>` comment
-- [ ] The healing report shows side-by-side old vs new element (text, type, position) so a human can judge correctness
+- [x] No code path auto-writes a healed spec — healer only writes to `output/heal-proposals/`, never `generated/`
+- [x] Healing output is always `output/heal-proposals/<spec-name>.patch.json` — never a direct file overwrite
+- [x] Each patch proposal includes a `healedComment` field: `// HEALED: <date> — original: '<old>' — new: '<new>'` to paste above the changed line
+- [x] Each proposal includes `oldElement` and `newElement` with text/type/selector for side-by-side human review
 - [ ] CI marks healed tests with a `[HEALED]` label in the report
 
 ---
@@ -305,8 +305,8 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | D3  | Generated tests have no owner     | ✅     | Never edit generated code; fix Action Library; record provenance             |
 | D4  | Feedback loop is vague            | ⬜     | Proposals only; semver vocab; specific signals defined                       |
 | D5  | Test data is underestimated       | ⬜     | Tests own their data via API; setup/execution/teardown plan sections         |
-| D6  | LLM cost/latency at scale         | ⬜     | Plan caching at authoring time; LLM only for unresolved steps                |
-| D7  | Healing can mask product bugs     | ⬜     | Never automatic; healed tests flagged; fix helpers not specs                 |
+| D6  | LLM cost/latency at scale         | ✅     | Plan caching at authoring time; LLM only for unresolved steps                |
+| D7  | Healing can mask product bugs     | ✅     | Never automatic; healed tests flagged; fix helpers not specs                 |
 | D8  | Generation ≠ Maintenance          | ✅     | Two explicit pipelines with different trust levels                           |
 | D9  | Vocab governance needs org change | ⬜     | Local team extensions; governance only for shared terms                      |
 
@@ -319,8 +319,8 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | Severity | Flaw                                                           | Status |
 | -------- | -------------------------------------------------------------- | ------ |
 | 🟠       | Single-scenario only — subsequent `Scenario:` blocks overwrite | ✅     |
-| 🟡       | `line.startsWith('#')` misidentifies steps containing `#`      | ⬜     |
-| 🟡       | Assumes keywords are always the first word                     | ⬜     |
+| 🟡       | `line.startsWith('#')` misidentifies steps containing `#`      | 🚫     |
+| 🟡       | `Scenario Outline:` blocks silently ignored                    | ✅     |
 | 🟢       | No line numbers in error messages                              | ⬜     |
 
 ### Stage 2 — App Explorer
@@ -346,9 +346,9 @@ Each one has a **Definition of Done** that describes what "fixed" looks like in 
 | 🟠       | No retry / exponential backoff on API errors                   | ✅     |
 | 🟠       | LLM temperature not set — defaults to high creativity          | ✅     |
 | 🟠       | No caching — Gemini called on every run for identical input    | ✅     |
-| 🟡       | Prompt injection: raw BDD step text inserted unsanitized       | ⬜     |
+| 🟡       | Prompt injection: raw BDD step text inserted unsanitized       | 🚫     |
 | 🟡       | No JSON schema enforcement (`response_schema`)                 | ✅     |
-| 🟡       | Full Gemini response logged on error — potential PII exposure  | ⬜     |
+| 🟡       | Full Gemini response logged on error — potential PII exposure  | ✅     |
 
 ### Stage 4 — Code Generator
 

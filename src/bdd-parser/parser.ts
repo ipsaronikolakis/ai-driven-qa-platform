@@ -45,9 +45,9 @@ export function parseAllScenarios(filePath: string): ParsedScenario[] {
       continue;
     }
 
-    if (line.startsWith('Scenario:')) {
+    if (line.startsWith('Scenario Outline:') || line.startsWith('Scenario:')) {
       flushScenario(); // save the previous scenario before starting a new one
-      scenarioName = line.replace('Scenario:', '').trim();
+      scenarioName = line.replace('Scenario Outline:', '').replace('Scenario:', '').trim();
       state = 'IN_SCENARIO';
       continue;
     }

@@ -60,6 +60,8 @@ export interface HealProposal {
 	oldElement: PageElement
 	newElement: PageElement
 	confidence: number
+	/** Paste this comment above the affected line in src/actions/index.ts */
+	healedComment: string
 }
 
 export interface HealReport {
@@ -277,6 +279,7 @@ async function main(): Promise<void> {
 					oldElement: oldEl,
 					newElement: match.element,
 					confidence: match.confidence,
+					healedComment: `// HEALED: ${new Date().toISOString().slice(0, 10)} — original selector: '${selector}' — new selector: '${match.element.selector}'`,
 				})
 				console.log(
 					`  [REPLACE] '${selector}' → '${match.element.selector}' (confidence: ${match.confidence.toFixed(2)})`,

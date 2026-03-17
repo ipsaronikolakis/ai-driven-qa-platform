@@ -25,7 +25,24 @@ const REPORT_DIR = path.resolve(ROOT_DIR, 'playwright-report')
 
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'public')))
-app.use('/report', express.static(REPORT_DIR))
+
+// ---------------------------------------------------------------------------
+// GET /api/report — serve the Playwright HTML report forced into light mode.
+// The report stores its theme in localStorage key "theme". Injecting a script
+// that sets it to "light-mode" before the bundle runs is all that's needed.
+// ---------------------------------------------------------------------------
+
+app.get('/api/report', (_req: Request, res: Response) => {
+	const indexPath = path.join(REPORT_DIR, 'index.html')
+	if (!fs.existsSync(indexPath)) {
+		res.status(404).send('No report found. Run the pipeline first.')
+		return
+	}
+	const html = fs.readFileSync(indexPath, 'utf-8')
+		.replace('<script ', `<script>try{localStorage.setItem('theme','dark-mode')}catch(e){}</script><script `)
+	res.setHeader('Content-Type', 'text/html; charset=utf-8')
+	res.send(html)
+})
 
 // ---------------------------------------------------------------------------
 // GET /api/scenarios — list all .feature files

@@ -319,7 +319,7 @@
 					<button id="btn-stop" class="danger" disabled>&#9632; Stop</button>
 					<label><input type="checkbox" id="chk-fresh" /> --fresh</label>
 					<span id="status-badge" class="status-badge idle">Idle</span>
-					<a id="btn-report" href="/report/index.html" target="_blank" style="display:none" class="btn-report">View Report ↗</a>
+					<a id="btn-report" href="/api/report" target="_blank" style="display:none" class="btn-report">View Report ↗</a>
 				</div>
 				<div id="run-log"></div>
 			</div>
@@ -424,7 +424,13 @@
 					document.getElementById('btn-save').disabled = true
 					document.getElementById('btn-lint').disabled = true
 					const bar = '─'.repeat(52)
-					const sections = files.map((f) => `# ── ${f.name} ${bar.slice(f.name.length + 4)}\n\n${f.content.trimEnd()}`)
+					const sections = files.map((f) => {
+						const header = `# ── ${f.name} ${bar.slice(Math.min(f.name.length + 4, bar.length))}`
+						const summaryLines = f.content.split('\n')
+							.filter((line) => /^\s*(Feature:|Scenario Outline:|Scenario:)/.test(line))
+							.map((line) => line.trimEnd())
+						return `${header}\n\n${summaryLines.join('\n')}`
+					})
 					editor.setValue(sections.join('\n\n\n'))
 					monaco.editor.setModelMarkers(editor.getModel(), 'lint', [])
 				}

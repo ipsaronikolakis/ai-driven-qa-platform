@@ -420,38 +420,15 @@ The Playwright MCP never runs in CI and is not part of the platform. It is Claud
 **Status:** ⬜ Not started
 **Severity:** 🔴 Critical
 
-Walk through every feature of the Web UI as a user. For each item, record what happened, whether it met the expected standard, and any issue found. Issues get added to IMPROVEMENTS.md as new fix items.
-
 **How to run:** `npm run serve` → open `http://localhost:3000`
 
-| # | Action | Expected behavior | Standard met? | Issue found |
-|---|--------|------------------|---------------|-------------|
-| 1 | Open the UI cold | Loads instantly; editor shows placeholder or last-used file | ⬜ | |
-| 2 | Select a `.feature` file from the picker | File content loads into the Monaco editor correctly | ⬜ | |
-| 3 | Type a BDD keyword (`When `) in the editor | Autocomplete dropdown appears with vocabulary suggestions | ⬜ | |
-| 4 | Filter autocomplete by typing partial text | List narrows to matching terms only | ⬜ | |
-| 5 | Select a suggestion with Enter | Term inserted at cursor; no duplicate text | ⬜ | |
-| 6 | Edit the scenario and press Ctrl+S | File saved; no data loss; confirmation visible | ⬜ | |
-| 7 | Click the Lint button | Warnings appear in the Lint Output tab; canonical suggestions shown | ⬜ | |
-| 8 | Click Lint on a valid scenario | "No warnings — all steps canonical" message shown | ⬜ | |
-| 9 | Click Run Pipeline | Status badge changes to "Running"; SSE log starts streaming immediately | ⬜ | |
-| 10 | Watch the run to completion | Every stage logs output; status badge turns green (pass) or red (fail) | ⬜ | |
-| 11 | Click "View Report" after a passing run | Playwright HTML report opens in a new tab with correct results | ⬜ | |
-| 12 | Check the Selector Health tab after a run | Table shows selectors with run/fail counts; unstable ones highlighted | ⬜ | |
-| 13 | Check the Page Model info bar | Shows element count, testid coverage %, unstable selector count with correct colour coding | ⬜ | |
-| 14 | Check the Feedback tab (after `npm run feedback:update`) | Proposals shown with priority pills and evidence | ⬜ | |
-| 15 | Check the Heal Proposals tab (after `npm run heal`) | Proposals shown with old/new selector and confidence % | ⬜ | |
-| 16 | Enable `--fresh` checkbox and run | Run completes; all caches bypassed (log shows no `[CACHE HIT]` lines) | ⬜ | |
-| 17 | Click Stop during a run | Pipeline subprocess killed; status resets to Idle | ⬜ | |
-| 18 | Run with a scenario that has unrecognised steps | Lint warnings in console; run still proceeds or fails with a clear message | ⬜ | |
-| 19 | Load "All files" from the picker | Read-only summary of all features and scenarios shown | ⬜ | |
-| 20 | Reload the page mid-run | Graceful handling — no zombie process left running | ⬜ | |
+Use the UI with your own apps and scenarios. Any behavior that does not meet expectations gets logged as a new fix item in IMPROVEMENTS.md.
 
 **Definition of Done:**
 
-- [ ] All 20 items walked through and Standard met? column filled in
-- [ ] Every `Issue found` entry has a corresponding fix item added to IMPROVEMENTS.md
-- [ ] No critical or high-severity issues remain open before moving to 5.2
+- [ ] UI tested against at least one real app with real scenarios
+- [ ] All issues found logged as fix items in IMPROVEMENTS.md
+- [ ] No critical or high-severity issues remain open
 
 ---
 
@@ -460,30 +437,15 @@ Walk through every feature of the Web UI as a user. For each item, record what h
 **Status:** ⬜ Not started
 **Severity:** 🔴 Critical
 
-Exercise the full GitHub Actions workflow by pushing real branches and PRs. Observe what happens at each step. Record what does not behave as expected.
+**How to run:** Push a branch to GitHub → open a PR → observe the Actions tab and PR comment.
 
-**How to run:** Push a branch to GitHub → open a PR → watch the Actions tab.
-
-| # | Action | Expected behavior | Standard met? | Issue found |
-|---|--------|------------------|---------------|-------------|
-| 1 | Push a branch with a passing scenario | Both CI jobs run; all green; PR shows green check | ⬜ | |
-| 2 | Open a PR from that branch | A PR comment is posted automatically with pass/fail table and workflow link | ⬜ | |
-| 3 | Push again to the same PR branch | PR comment is updated (not duplicated) with the new run's results | ⬜ | |
-| 4 | Introduce a deliberate test failure (wrong assertion text) | CI fails; PR comment shows ❌ FAILED with `product_defect` category and suggestion | ⬜ | |
-| 5 | Introduce a broken selector | CI fails; PR comment shows `selector_drift` category | ⬜ | |
-| 6 | Download the `playwright-report` artifact | Opens correctly; shows traces and screenshots for failed tests | ⬜ | |
-| 7 | Download the `failure-analysis` artifact (on failure run) | JSON is readable; categories and suggestions are accurate | ⬜ | |
-| 8 | Remove `GEMINI_API_KEY` from repo secrets and push a vocab-only scenario | Pipeline completes successfully without the key | ⬜ | |
-| 9 | Push a scenario with an unrecognised step (no GEMINI_API_KEY set) | Pipeline fails with a clear error message, not a cryptic crash | ⬜ | |
-| 10 | Introduce a unit test failure | Job 1 fails; Job 2 does not start; PR blocked | ⬜ | |
-| 11 | Use `workflow_dispatch` to trigger a manual run | Run starts immediately from the Actions UI; completes normally | ⬜ | |
-| 12 | Check the selector-health-report artifact | HTML report downloads and renders correctly in a browser | ⬜ | |
+Use CI/CD with your own scenarios against your own apps. Any behavior that does not meet expectations gets logged as a new fix item in IMPROVEMENTS.md.
 
 **Definition of Done:**
 
-- [ ] All 12 items walked through and Standard met? column filled in
-- [ ] Every `Issue found` entry has a corresponding fix item added to IMPROVEMENTS.md
-- [ ] No critical or high-severity issues remain open before moving to 5.3
+- [ ] CI/CD exercised with at least one real app scenario end-to-end
+- [ ] All issues found logged as fix items in IMPROVEMENTS.md
+- [ ] No critical or high-severity issues remain open
 
 ---
 

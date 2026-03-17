@@ -415,35 +415,16 @@ The Playwright MCP never runs in CI and is not part of the platform. It is Claud
 
 ---
 
-#### 5.1 User Acceptance Testing — Web UI
+#### 5.1 User Acceptance Testing — UI + CI/CD
 
 **Status:** ⬜ Not started
 **Severity:** 🔴 Critical
 
-**How to run:** `npm run serve` → open `http://localhost:3000`
-
-Use the UI with your own apps and scenarios. Any behavior that does not meet expectations gets logged as a new fix item in IMPROVEMENTS.md.
+Test the full end-to-end experience: author scenarios in the Web UI, run the pipeline, push to GitHub, and observe CI/CD behavior — all using your own apps and your own scenarios. Any behavior that does not meet expectations gets logged as a new fix item in IMPROVEMENTS.md.
 
 **Definition of Done:**
 
-- [ ] UI tested against at least one real app with real scenarios
-- [ ] All issues found logged as fix items in IMPROVEMENTS.md
-- [ ] No critical or high-severity issues remain open
-
----
-
-#### 5.2 User Acceptance Testing — CI/CD
-
-**Status:** ⬜ Not started
-**Severity:** 🔴 Critical
-
-**How to run:** Push a branch to GitHub → open a PR → observe the Actions tab and PR comment.
-
-Use CI/CD with your own scenarios against your own apps. Any behavior that does not meet expectations gets logged as a new fix item in IMPROVEMENTS.md.
-
-**Definition of Done:**
-
-- [ ] CI/CD exercised with at least one real app scenario end-to-end
+- [ ] UAT run against at least one real app with real scenarios covering both UI and CI/CD
 - [ ] All issues found logged as fix items in IMPROVEMENTS.md
 - [ ] No critical or high-severity issues remain open
 
@@ -914,10 +895,9 @@ Track selector success/failure rate across runs over time.
 ### Now — Service Hardening & User Acceptance Testing *(Phase 5)*
 
 - [ ] 5.0 Playwright MCP clarification — add "Two Playwright Contexts" to architecture docs
-- [ ] 5.1 UAT — Web UI — walk through all 20 UI scenarios; log every issue found
-- [ ] 5.2 UAT — CI/CD — push real branches/PRs; walk through all 12 CI scenarios; log every issue
-- [ ] 5.3 Multi-app compatibility — test against TodoMVC, Conduit, UI Testing Playground
-- [ ] 5.4 Behavioral standards audit — compare observed behavior against documented standards
+- [ ] 5.1 UAT — UI + CI/CD end-to-end with real apps and real scenarios; log all issues found
+- [ ] 5.2 Multi-app compatibility — test against TodoMVC, Conduit, UI Testing Playground
+- [ ] 5.3 Behavioral standards audit — compare observed behavior against documented standards
 
 ### Done — Phase 1 (Critical Stability)
 

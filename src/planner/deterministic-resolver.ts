@@ -195,8 +195,8 @@ function findInputByHint(pageModel: PageModel, ...hints: string[]): PageElement 
   return pageModel.elements.find(el =>
     el.type === 'input' &&
     lower.some(h =>
-      el.id.toLowerCase().includes(h) ||
-      el.name.toLowerCase().includes(h) ||
+      (el.id ?? '').toLowerCase().includes(h) ||
+      (el.name ?? '').toLowerCase().includes(h) ||
       el.text.toLowerCase().includes(h),
     ),
   );

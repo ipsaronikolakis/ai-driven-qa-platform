@@ -5,6 +5,7 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "pipeline": "ts-node src/index.ts",
+    "generate": "ts-node src/index.ts",
     "fresh": "ts-node src/index.ts --fresh",
     "lint:scenarios": "ts-node src/vocabulary/lint-cli.ts",
     "selector-report": "ts-node src/health/report-cli.ts",

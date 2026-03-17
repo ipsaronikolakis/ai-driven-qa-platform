@@ -1,6 +1,6 @@
 # OKR Tracker — Objective 5: AI-Driven QA Platform (POC to MVP)
 
-**Last updated:** 2026-03-17
+**Last updated:** 2026-03-17 (architecture docs + diagrams complete)
 
 ---
 
@@ -9,7 +9,7 @@
 | KR | Title | Status | % Complete |
 |----|-------|--------|-----------|
 | KR 5.1 | POC Completed and Demonstrated | 🔄 In progress | 60% |
-| KR 5.2 | Core Architecture Defined and Validated | 🔄 In progress | 40% |
+| KR 5.2 | Core Architecture Defined and Validated | 🔄 In progress | 65% |
 | KR 5.3 | MVP Phase 1 Delivered: Specification and Governance Layer | ✅ Done | 100% |
 | KR 5.4 | MVP Phase 2 Delivered: Test Synthesis and Execution Layer | 🔄 In progress | 75% |
 | KR 5.5 | Platform Roadmap for 2027 Published | ⬜ Not started | 0% |
@@ -22,11 +22,11 @@ These are the highest-leverage actions needed to close remaining OKR gaps:
 
 1. **Schedule and run the live POC demo** — [QA Lead] Book a team or cross-team session; the demo content is ready. This unblocks KR 5.1 completion.
 2. **Publish findings and limitations to Confluence** — [QA Lead] Write up POC learnings, known gaps, and LLM fallback behaviour post-demo.
-3. **Publish the formal architecture document to Confluence** — [QA Lead] Formalise what exists in IMPROVEMENTS.md and code into the required component-level doc.
+3. **Publish the architecture docs to Confluence** — [QA Lead] The `architecture/` suite (5 docs + Mermaid diagrams) is complete in the repo; publish it to the agreed Confluence space.
 4. **Get Engineering stakeholder review on record** — [QA Lead + Eng] Schedule a review session for the architecture document; record sign-off.
-5. **Write the 2027 roadmap document** — [QA Lead] Cover second-phase subsystems with effort estimates, dependency mapping, and Engineering collaboration proposal.
-6. **Onboard at least one real product area** — [QA Lead + Eng] Replace the-internet.herokuapp.com demo scenarios with real product scenarios to satisfy KR 5.3 and KR 5.4 delivery requirements.
-7. **Define and implement stakeholder results reporting** — [QA Lead + Eng] Establish how pass/fail results are surfaced to stakeholders beyond PR comments.
+5. **Onboard at least one real product area** — [QA Lead + Eng] Replace the-internet.herokuapp.com demo scenarios with real product scenarios to satisfy KR 5.3 and KR 5.4 delivery requirements.
+6. **Define and implement stakeholder results reporting** — [QA Lead + Eng] Establish how pass/fail results are surfaced to stakeholders beyond PR comments.
+7. **Write the 2027 roadmap document** — [QA Lead] Cover second-phase subsystems with effort estimates, dependency mapping, and Engineering collaboration proposal.
 
 ---
 
@@ -59,9 +59,9 @@ The full pipeline is built and functional end-to-end. The blocker is that no liv
 
 ## KR 5.2 — Core Architecture Defined and Validated (Q2)
 
-**Overall: 40% complete**
+**Overall: 65% complete**
 
-All 10 MVP subsystems exist in code and are described informally in IMPROVEMENTS.md. The gap is a formal, published architecture document and a recorded Engineering stakeholder review.
+All 10 MVP subsystems exist in code. A full formal architecture suite has now been written in `architecture/` covering all subsystems with flow diagrams. The remaining gaps are Confluence publishing and an Engineering stakeholder review.
 
 ### What's Done vs What's Left
 
@@ -77,17 +77,20 @@ All 10 MVP subsystems exist in code and are described informally in IMPROVEMENTS
 | Execution Runner subsystem implemented | ✅ Done | No shell injection, JSON + HTML reports, crash vs failure distinction |
 | Failure Analyzer subsystem implemented | ✅ Done | 5 categories classified |
 | Reporting subsystem implemented | ✅ Done | HTML report, selector health HTML, PR comments |
-| Formal architecture document published to Confluence | ⬜ Not started | Only code + IMPROVEMENTS.md exist |
-| Document covers component responsibilities | ⬜ Not started | Depends on document being created |
-| Document covers integration points | ⬜ Not started | Depends on document being created |
-| Document covers phased build sequence | ⬜ Not started | Depends on document being created |
+| Document covers component responsibilities | ✅ Done | `architecture/02-components.md` — all 10 subsystems with inputs/outputs/examples |
+| Document covers integration points | ✅ Done | `architecture/02-components.md` — component interaction map with Mermaid diagram |
+| Document covers phased build sequence | ✅ Done | `architecture/03-pipelines.md` — Generate + Heal pipelines with full flow diagrams |
+| Architecture doc includes non-technical overview | ✅ Done | `architecture/01-overview.md` — for QA engineers and stakeholders |
+| Architecture doc includes Web UI guide | ✅ Done | `architecture/04-web-ui.md` — layout, SSE flow, API endpoints |
+| Architecture doc includes CI/CD guide | ✅ Done | `architecture/05-ci-cd.md` — triggers, jobs, artifacts, merge gates |
+| Formal architecture document published to Confluence | ⬜ Not started | `architecture/` exists in repo; Confluence publishing pending |
 | Engineering stakeholder review completed | ⬜ Not started | No review scheduled |
 | Review sign-off recorded | ⬜ Not started | Depends on review being run |
 
 ### Action Items
 
-- [ ] [QA Lead] Draft the formal architecture document covering all 10 MVP subsystems: component responsibilities, integration points, data flow, and phased build sequence. Use IMPROVEMENTS.md as a source.
-- [ ] [QA Lead] Publish the architecture document to Confluence in the appropriate space.
+- [x] [QA Lead] Draft the formal architecture document covering all 10 MVP subsystems — **done** (`architecture/` directory, 5 docs + Mermaid flow diagrams).
+- [ ] [QA Lead] Publish the architecture docs to Confluence in the appropriate space.
 - [ ] [QA Lead + Eng] Schedule and run a review session with at least one Engineering stakeholder.
 - [ ] [QA Lead] Record that the review took place (e.g. Confluence comment, meeting notes attached to the doc, or Asana task update).
 

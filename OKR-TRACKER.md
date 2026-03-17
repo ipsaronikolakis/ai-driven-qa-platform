@@ -26,7 +26,7 @@ These are the highest-leverage actions needed to close remaining OKR gaps:
 4. **Publish findings and limitations to Confluence** — [QA Lead] Write up POC learnings, known gaps, and LLM fallback behaviour post-demo.
 5. **Publish the architecture docs to Confluence** — [QA Lead] The `architecture/` suite (5 docs + Mermaid diagrams) is complete in the repo; publish it to the agreed Confluence space.
 6. **Get Engineering stakeholder review on record** — [QA Lead + Eng] Schedule a review session for the architecture document; record sign-off.
-7. **Onboard at least one real product area** — [QA Lead + Eng] Replace the-internet.herokuapp.com demo scenarios with real product scenarios to satisfy KR 5.3 and KR 5.4 delivery requirements.
+7. **Onboard at least one real product area** — ✅ covered by UAT (Phase 5.1). UAT will be run against real product areas; the results are the KR 5.3 and KR 5.4 delivery evidence. No separate step needed.
 8. **Define and implement stakeholder results reporting** — [QA Lead + Eng] Establish how pass/fail results are surfaced to stakeholders beyond PR comments.
 9. **Write the 2027 roadmap document** — [QA Lead] Cover second-phase subsystems with effort estimates, dependency mapping, and Engineering collaboration proposal.
 
@@ -130,12 +130,11 @@ All 10 MVP subsystems exist in code. A full formal architecture suite has now be
 | BDD Authoring interface operational | ✅ Done | Web UI with Monaco editor and vocab autocomplete |
 | Vocabulary Linter producing deterministic validation output | ✅ Done | Step-level warnings, closest canonical match suggestions, --fix flag |
 | Scenario Parser producing structured JSON from validated BDD | ✅ Done | Multi-scenario, Scenario Outline support, line numbers |
-| At least 3 real product scenarios parsed end-to-end | 🔄 In progress | Scenarios exist against demo site; no real product area onboarded yet |
+| At least 3 real product scenarios parsed end-to-end | 🔄 In progress | UAT (Phase 5) will be run against real product areas — this closes during UAT |
 
 ### Action Items
 
-- [ ] [QA Lead + Eng] Identify a real product area to onboard. Write at least 3 BDD scenarios against it, run them through the full Specification and Governance Layer, and confirm structured JSON output.
-- [ ] [QA Lead] Document the onboarded scenarios as the formal evidence of KR 5.3 delivery.
+- [ ] [QA Lead] Run UAT against real product areas (Phase 5.1 in IMPROVEMENTS.md). The UAT run is the delivery evidence for this KR — capture the output (parsed JSON, lint results) as formal record.
 
 ---
 
@@ -153,15 +152,13 @@ All subsystems are built and operational. The gaps are: no real product scenario
 | Code Generator producing Playwright specs from plans | ✅ Done | TypeScript output with syntax validation and provenance headers |
 | Execution Runner running generated specs with pass/fail results captured | ✅ Done | Runs in CI, JSON + HTML reports, crash vs failure distinction |
 | Failure Analyzer classifying at least 3 failure categories | ✅ Done | 5 categories: selector_drift, timing, bad_generation, missing_data, product_defect |
-| At least 5 real product scenarios generated and executed end-to-end | ⬜ Not started | Demo site scenarios exist; no real product area onboarded |
-| Results reported to stakeholders | 🔄 In progress | PR comments implemented; no broader stakeholder notification defined |
+| At least 5 real product scenarios generated and executed end-to-end | 🔄 In progress | UAT (Phase 5) will be run against real product areas — this closes during UAT |
+| Results reported to stakeholders | 🔄 In progress | PR comments implemented; broader stakeholder reporting to be defined post-UAT |
 
 ### Action Items
 
-- [ ] [QA Lead + Eng] Onboard a real product area (coordinate with KR 5.3 action item). Execute at least 5 real product scenarios end-to-end through Planning Engine, Code Generator, and Execution Runner.
-- [ ] [QA Lead] Capture the results (pass/fail + failure analysis) as formal evidence of KR 5.4 delivery.
-- [ ] [QA Lead + Eng] Define and implement a stakeholder results reporting mechanism — decide whether PR comments are sufficient or whether a dashboard, email summary, or Confluence report page is required.
-- [ ] [QA Lead] Notify stakeholders of results after first real product area execution run.
+- [ ] [QA Lead] Run UAT against real product areas (Phase 5.1 in IMPROVEMENTS.md). Capture pass/fail results and failure analysis output as formal evidence of KR 5.4 delivery.
+- [ ] [QA Lead + Eng] After UAT, define stakeholder results reporting — decide whether PR comments are sufficient or whether a dashboard, email summary, or Confluence report page is required.
 
 ---
 

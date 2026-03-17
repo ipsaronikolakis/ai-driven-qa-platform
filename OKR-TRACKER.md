@@ -199,6 +199,13 @@ No roadmap document exists. This is a standalone deliverable requiring dedicated
 ## Notes and Context
 
 - **Technical vs delivery completion:** The platform is technically more advanced than the OKR targets require. The remaining gaps are almost entirely in the delivery, documentation, and stakeholder engagement dimensions — not in code.
-- **Demo site dependency:** Using the-internet.herokuapp.com was appropriate for POC development but is a blocker for claiming real-world delivery on KR 5.3 and KR 5.4. Onboarding a real product area is the single most impactful action for closing multiple KRs simultaneously.
+- **UAT is the gate:** A successful UAT (Phase 5 in IMPROVEMENTS.md) — covering both the UI and CI/CD with real apps and real scenarios, followed by fixes and a clean re-test — is the prerequisite before any KR delivery work begins. After that gate is passed, KR 5.1, 5.2, 5.3, and 5.4 can all be driven to completion in a short focused push.
+- **UAT against a real product = KR 5.3 + 5.4 evidence:** If the UAT apps are real product areas (not demo sites), the UAT run itself generates the delivery evidence for KR 5.3 (3 real scenarios parsed end-to-end) and KR 5.4 (5 real scenarios executed end-to-end). No separate onboarding step needed.
+- **After UAT: what closes each KR:**
+  - KR 5.1 → schedule + run live demo, publish findings to Confluence
+  - KR 5.2 → publish architecture docs to Confluence, get Engineering stakeholder review on record
+  - KR 5.3 → UAT evidence (if real product) + document it
+  - KR 5.4 → UAT evidence (if real product) + define stakeholder reporting
+  - KR 5.5 → standalone roadmap writing task, independent of UAT
 - **Confluence publishing:** KR 5.1 and KR 5.2 both require Confluence as the publication target. Ensure the correct Confluence space and page hierarchy are agreed before writing.
 - **Engineering stakeholder:** KR 5.2 requires a named Engineering stakeholder to review the architecture document. Identify this person before drafting to ensure the review can be scheduled promptly after the document is ready.

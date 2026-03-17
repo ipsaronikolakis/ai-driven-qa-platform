@@ -14,33 +14,43 @@ This document describes the GitHub Actions workflow — triggers, jobs, individu
 
 ```mermaid
 flowchart TD
-    T1["push to any branch"] & T2["pull_request"] & T3["workflow_dispatch"] --> J1
+    T1(["push"]) & T2(["pull_request"]) & T3(["workflow_dispatch"])
 
-    subgraph J1 ["Job 1 — Unit Tests (ubuntu-latest)"]
-        U1["checkout + Node 22 + npm ci"] --> U2["playwright install chromium"]
-        U2 --> U3["npm run test:unit"]
+    T1 & T2 & T3 --> J1
+
+    subgraph J1 ["Job 1 — Unit Tests · ubuntu-latest"]
+        U1["checkout + Node 22 + npm ci"]
+        U2["playwright install chromium"]
+        U3["npm run test:unit"]
+        U1 --> U2 --> U3
     end
 
-    J1 -->|"❌ fail"| STOP["Pipeline stopped\nno further jobs"]
+    J1 -->|"❌ fail"| STOP(["Pipeline stopped\nno further jobs run"])
     J1 -->|"✅ pass"| J2
 
-    subgraph J2 ["Job 2 — QA Pipeline (ubuntu-latest)"]
+    subgraph J2 ["Job 2 — QA Pipeline · ubuntu-latest"]
         Q1["checkout + Node 22 + npm ci\nplaywright install chromium"]
-        Q1 --> Q2["npm run lint:scenarios"]
-        Q2 --> Q3["npm run fresh\n(GEMINI_API_KEY optional)"]
-        Q3 --> Q4["Upload playwright-report\n(always · 30 days)"]
-        Q3 -->|"on failure"| Q5["Upload failure-analysis\n(30 days)"]
-        Q4 --> Q6["npm run selector-report\n(non-blocking)"]
-        Q6 --> Q7["Upload selector-health.html\n(always, ignore if missing)"]
-        Q7 --> Q8{"pull_request\nevent?"}
-        Q8 -->|yes| Q9["Post PR comment\n(github-script)"]
-        Q8 -->|no| DONE["Done"]
-        Q9 --> DONE
+        Q2["npm run lint:scenarios"]
+        Q3["npm run fresh\nGEMINI_API_KEY optional"]
+        Q4[("Upload playwright-report\nalways · 30 days")]
+        Q5[("Upload failure-analysis\non failure · 30 days")]
+        Q6["npm run selector-report\nnon-blocking"]
+        Q7[("Upload selector-health.html\nalways · ignore if missing")]
+        Q8{"pull_request\nevent?"}
+        Q9["Post PR comment\ngithub-script"]
+        DONE(["Done"])
+
+        Q1 --> Q2 --> Q3
+        Q3 --> Q4
+        Q3 -->|"on failure"| Q5
+        Q4 --> Q6 --> Q7 --> Q8
+        Q8 -->|yes| Q9 --> DONE
+        Q8 -->|no| DONE
     end
 
-    DONE --> RESULT{"Exit code?"}
-    RESULT -->|0| PASS["✅ PR can merge"]
-    RESULT -->|1| FAIL["❌ PR blocked"]
+    DONE --> RESULT{"Exit\ncode?"}
+    RESULT -->|"0"| PASS(["✅ PR can merge"])
+    RESULT -->|"1"| FAIL(["❌ PR blocked"])
 ```
 
 ---
@@ -138,19 +148,20 @@ When the workflow runs on a pull request, a comment is posted automatically. The
 
 ```mermaid
 flowchart TD
-    SCRIPT["github-script reads output files"]
-    SCRIPT --> C1["playwright-results.json\n→ status badge + counts table"]
-    C1 --> C2{"Any failures?"}
-    C2 -->|yes| C3["failure-analysis.json\n→ category + suggestion per failure"]
+    SCRIPT(["github-script\nreads output files"])
+
+    SCRIPT --> C1[/"playwright-results.json\n→ status badge + counts table"/]
+    C1 --> C2{"Any\nfailures?"}
+    C2 -->|yes| C3[/"failure-analysis.json\n→ category + suggestion\nper failure"/]
     C2 -->|no| C4
-    C3 --> C4{"Unstable selectors?\n(fail rate > 20%)"}
-    C4 -->|yes| C5["selector-health.json\n→ unstable selector list"]
+    C3 --> C4{"Unstable selectors?\nfail rate > 20%"}
+    C4 -->|yes| C5[/"selector-health.json\n→ unstable selector list"/]
     C4 -->|no| C6
-    C5 --> C6{"HEALED annotations\nin src/actions/index.ts?"}
-    C6 -->|yes| C7["scan for // HEALED: lines\n→ list for human review"]
+    C5 --> C6{"HEALED comments\nin src/actions/index.ts?"}
+    C6 -->|yes| C7[/"scan for // HEALED: lines\n→ list for human review"/]
     C6 -->|no| C8
     C7 --> C8["Append workflow run link"]
-    C8 --> POST["Post comment on PR"]
+    C8 --> POST(["Post comment on PR"])
 ```
 
 ### Status Section

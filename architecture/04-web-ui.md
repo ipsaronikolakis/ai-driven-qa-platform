@@ -22,11 +22,15 @@ The UI is divided into three panels:
 - **Bottom panel (220px):** tabbed data panel showing selector health, heal proposals, lint output, and feedback
 
 ```mermaid
-block-beta
-    columns 2
-    LEFT["Left Panel (55%)\n──────────────\nFile picker dropdown\nMonaco Editor\n• Gherkin highlighting\n• Vocab autocomplete\n• Ctrl+S to save\n[Save] [Lint] buttons"]:1
-    RIGHT["Right Panel\n──────────────\nStatus badge (Idle/Running/Passed/Failed)\n[Run Pipeline] [Stop] [--fresh]\nPage Model info bar\nLive SSE log stream\n[View Report] link"]:1
-    BOTTOM["Bottom Panel (220px) — Tabs: Selector Health | Heal Proposals | Lint Output | Feedback"]:2
+flowchart TB
+    subgraph UI ["Browser — localhost:3000"]
+        direction TB
+        subgraph TOP ["Top Row"]
+            LEFT["Left Panel 55%\n─────────────────\nFile picker dropdown\nMonaco Editor\n· Gherkin highlighting\n· Vocab autocomplete\n· Ctrl+S to save\n\nSave   Lint"]
+            RIGHT["Right Panel\n─────────────────\nStatus badge\nIdle · Running · Passed · Failed\n\nRun Pipeline   Stop   --fresh\n\nPage Model info bar\nLive SSE log stream\nView Report link"]
+        end
+        BOTTOM["Bottom Panel — 220 px\nSelector Health  |  Heal Proposals  |  Lint Output  |  Feedback"]
+    end
 ```
 
 ---
@@ -103,24 +107,34 @@ Colour coding:
 
 ```mermaid
 sequenceDiagram
-    participant U as Browser (UI)
+    actor User
+    participant B as Browser (UI)
     participant S as server.ts
     participant P as Pipeline process
     participant FS as Filesystem
 
-    U->>S: POST /api/run
+    User->>B: Click "Run Pipeline"
+    B->>S: POST /api/run
     S->>P: spawn ts-node src/index.ts
-    loop SSE stream
+
+    loop SSE stream (per stdout line)
         P-->>S: stdout line
-        S-->>U: data: <line>\n\n
-        U->>U: append to log div
+        S-->>B: data: line\n\n
+        B->>B: append to log div
     end
-    P->>FS: write playwright-results.json\n selector-health.json\n failure-analysis.json
+
+    P->>FS: playwright-results.json
+    P->>FS: selector-health.json
+    P->>FS: failure-analysis.json
     P-->>S: exit 0 / 1
-    S-->>U: data: done (passed/failed)\n\n
-    U->>S: GET /api/selector-health
-    U->>S: GET /api/feedback-proposals
-    U->>U: refresh bottom panel tabs
+    S-->>B: data: done {passed|failed}\n\n
+
+    B->>S: GET /api/selector-health
+    S-->>B: selector health JSON
+    B->>S: GET /api/feedback-proposals
+    S-->>B: proposals JSON
+    B->>B: refresh bottom panel tabs
+    B->>User: show final status badge
 ```
 
 ---

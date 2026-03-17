@@ -7,7 +7,7 @@ if [ -n "$staged" ]; then
   echo ""
   echo "  ✗ pre-commit: cannot commit changes to generated/ files."
   echo "    These files are AUTO-GENERATED — do not edit them directly."
-  echo "    Fix selectors or behaviour via src/actions/index.ts instead."
+  echo "    Fix selectors or behavior via src/actions/index.ts instead."
   echo ""
   echo "  Blocked files:"
   echo "$staged" | sed 's/^/    • /'

@@ -415,7 +415,43 @@ The Playwright MCP never runs in CI and is not part of the platform. It is Claud
 
 ---
 
-#### 5.1 User Acceptance Testing — UI + CI/CD
+#### 5.1 Configure Exploration Script for Target App
+
+**Status:** ⬜ Not started
+**Severity:** 🔴 Critical — UAT cannot begin without this
+
+The App Explorer runs a scripted navigation sequence (`src/config/exploration-script.ts`) to crawl the target app's DOM before any test plan or spec can be generated. This script is currently hardcoded to the-internet.herokuapp.com. It must be updated for each real product app before UAT can run.
+
+**What needs to be done per app:**
+
+1. Update `src/config/exploration-script.ts` with the real app's base URL
+2. Define the navigation steps needed to expose all pages you want to test — including any login sequence, page transitions, or interactions that reveal hidden UI
+3. Run `npm run fresh` once to verify the crawler successfully captures the page model
+4. Review `output/stage2-page-model.json` — confirm the elements, selectors, and `testidCoverage` look correct before writing any scenarios
+
+**Example structure:**
+```typescript
+export const EXPLORATION_SCRIPT: ExplorationStep[] = [
+  { action: 'navigate', value: 'https://your-app.com/login' },
+  { action: 'capture' },
+  { action: 'fill', selector: '#username', value: 'test-user' },
+  { action: 'fill', selector: '#password', value: 'test-pass' },
+  { action: 'click', selector: 'button[type="submit"]' },
+  { action: 'capture' },
+  // add more navigate → capture steps for each page to test
+]
+```
+
+**Definition of Done:**
+
+- [ ] Exploration script updated with real app URL and navigation steps
+- [ ] `npm run fresh` completes Stage 2 without errors
+- [ ] `output/stage2-page-model.json` contains real app elements with valid selectors
+- [ ] `testidCoverage` reviewed — low coverage noted as a risk before proceeding
+
+---
+
+#### 5.2 User Acceptance Testing — UI + CI/CD
 
 **Status:** ⬜ Not started
 **Severity:** 🔴 Critical
@@ -430,7 +466,7 @@ Test the full end-to-end experience: author scenarios in the Web UI, run the pip
 
 ---
 
-#### 5.3 Multi-App Compatibility Testing
+#### 5.3 Multi-App Compatibility Testing  *(repeat 5.1 + 5.2 for each app)*
 
 **Status:** ⬜ Not started
 **Severity:** 🟠 High
@@ -895,9 +931,10 @@ Track selector success/failure rate across runs over time.
 ### Now — Service Hardening & User Acceptance Testing *(Phase 5)*
 
 - [ ] 5.0 Playwright MCP clarification — add "Two Playwright Contexts" to architecture docs
-- [ ] 5.1 UAT — UI + CI/CD end-to-end with real apps and real scenarios; log all issues found
-- [ ] 5.2 Multi-app compatibility — test against TodoMVC, Conduit, UI Testing Playground
-- [ ] 5.3 Behavioral standards audit — compare observed behavior against documented standards
+- [ ] 5.1 Configure exploration script — update for real app URL and navigation steps; verify page model
+- [ ] 5.2 UAT — UI + CI/CD end-to-end with real apps and real scenarios; log all issues found
+- [ ] 5.3 Multi-app compatibility — repeat 5.1 + 5.2 for TodoMVC, Conduit, UI Testing Playground
+- [ ] 5.4 Behavioral standards audit — compare observed behavior against documented standards
 
 ### Done — Phase 1 (Critical Stability)
 

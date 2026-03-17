@@ -44,9 +44,10 @@ This work must be complete before the platform can be demonstrated, onboarded to
 | Phase 5 item | Status |
 |---|---|
 | 5.0 Playwright MCP clarification (architecture doc updates) | ⬜ Not started |
-| 5.1 UAT — UI + CI/CD end-to-end with real apps and real scenarios | ⬜ Not started |
-| 5.2 Multi-app compatibility (TodoMVC, Conduit, UI Testing Playground) | ⬜ Not started |
-| 5.3 Behavioral standards audit (observed vs documented standards) | ⬜ Not started |
+| 5.1 Configure exploration script for real app (URL + navigation steps + page model verified) | ⬜ Not started |
+| 5.2 UAT — UI + CI/CD end-to-end with real apps and real scenarios | ⬜ Not started |
+| 5.3 Multi-app compatibility (TodoMVC, Conduit, UI Testing Playground) | ⬜ Not started |
+| 5.4 Behavioral standards audit (observed vs documented standards) | ⬜ Not started |
 
 ---
 

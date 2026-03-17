@@ -9,26 +9,45 @@
 
 ```mermaid
 flowchart TD
-    YAML["vocabulary/core.yaml"] --> VR["1. Vocabulary Registry"]
-    VR --> LT["3. Vocabulary Linter"]
-    VR --> PE["6. Planning Engine"]
-    VR --> UI["2. BDD Authoring (Web UI)"]
+    YAML[("vocabulary/\ncore.yaml")]
+    VR["1. Vocabulary\nRegistry"]
+    UI["2. BDD Authoring\nWeb UI"]
+    LT["3. Vocabulary\nLinter"]
+    SP["4. Scenario\nParser"]
+    AE["5. App Explorer\nheadless Chromium"]
+    PE["6. Planning\nEngine"]
+    CG["7. Code\nGenerator"]
+    ER["8. Execution\nRunner"]
+    FA["9. Failure\nAnalyzer"]
+    RPT["10. Reporting"]
 
-    UI -->|saves .feature| FS["scenarios/*.feature"]
-    FS --> SP["4. Scenario Parser"]
+    FS[("scenarios/\n*.feature")]
+    PM[/"PageModel"/]
+    TP[/"TestPlan"/]
+    RES[("output/\nresults + health")]
+
+    YAML --> VR
+    VR --> LT
+    VR --> PE
+    VR --> UI
+
+    UI -->|"Save"| FS
+    FS --> SP
     SP --> LT
     SP --> PE
 
-    AE["5. App Explorer\n(headless Chromium)"] --> PM["PageModel"]
+    AE --> PM
     PM --> PE
 
-    PE -->|TestPlan| CG["7. Code Generator"]
-    CG -->|.spec.ts| ER["8. Execution Runner"]
+    PE --> TP
+    TP --> CG
+    CG -->|".spec.ts"| ER
 
-    ER -->|playwright-results.json| FA["9. Failure Analyzer"]
-    ER -->|selector-health.json| RPT["10. Reporting"]
-    FA -->|failure-analysis.json| RPT
-    RPT --> UI
+    ER --> RES
+    RES --> FA
+    RES --> RPT
+    FA -->|"failure-analysis.json"| RPT
+    RPT -->|"refresh tabs"| UI
 ```
 
 ---
@@ -189,22 +208,26 @@ For each element found on the page, the explorer attempts selectors in this orde
 
 ```mermaid
 flowchart TD
-    EL["Element found on page"]
+    EL(["Element found on page"])
+
     EL --> T1{"data-testid\npresent?"}
-    T1 -->|yes| C1["[data-testid='...']"]
+    T1 -->|yes| C1["`[data-testid='...']`"]
     T1 -->|no| T2{"ARIA role +\naccessible name?"}
-    T2 -->|yes| C2["role=button[name='...']"]
+    T2 -->|yes| C2["`role=button[name='...']`"]
     T2 -->|no| T3{"id\npresent?"}
-    T3 -->|yes| C3["#id"]
+    T3 -->|yes| C3["`#id`"]
     T3 -->|no| T4{"name attr\npresent?"}
-    T4 -->|yes| C4["[name='...']"]
+    T4 -->|yes| C4["`[name='...']`"]
     T4 -->|no| T5{"visible text\navailable?"}
     T5 -->|yes| C5["text-based selector"]
-    T5 -->|no| C6["❌ Rejected\n(bare tag)"]
+    T5 -->|no| REJ(["❌ Rejected — bare tag"])
 
-    C1 & C2 & C3 & C4 & C5 --> U{"Unique?\n(count = 1)"}
-    U -->|yes| STABLE["✅ Accepted\n→ stability pass"]
-    U -->|no| NEXT["Try next priority"]
+    C1 & C2 & C3 & C4 & C5 --> U{"Unique?\ncount = 1"}
+    U -->|yes| STAB["Stability re-check\n500 ms later"]
+    STAB --> S2{"Still resolves\nto 1 element?"}
+    S2 -->|yes| ACC(["✅ Accepted"])
+    S2 -->|no| UNS[/"Added to\nunstableSelectors[]"/]
+    U -->|no| NEXT(("try next\npriority"))
     NEXT --> T2
 ```
 
@@ -257,14 +280,21 @@ A `TestPlan`:
 
 ```mermaid
 flowchart TD
-    IN["ParsedScenario + PageModel"] --> P1{"All steps in\nvocabulary?"}
-    P1 -->|yes| DET["Deterministic resolver\n(local rules, no API)"]
-    P1 -->|no| LLM["Gemini 2.5 Flash\n(temperature=0, JSON schema)"]
-    DET --> VAL["validatePlan()\ncheck selectors vs PageModel"]
+    IN[/"ParsedScenario\n+ PageModel"/]
+
+    IN --> P1{"All steps\nin vocabulary?"}
+
+    P1 -->|"✅ yes"| DET["Deterministic Resolver\nlocal rules · no API call"]
+    P1 -->|"⚠️ some unknown"| CHK{"GEMINI_API_KEY\nset?"}
+    CHK -->|yes| LLM["Gemini 2.5 Flash\ntemperature=0\nJSON schema enforced"]
+    CHK -->|no| ERR1(["❌ Error — LLM required\nbut key missing"])
+
+    DET --> VAL["validatePlan()\ncross-reference selectors\nvs PageModel.elements"]
     LLM --> VAL
-    VAL --> GT50{"> 50% unknown\nselectors?"}
-    GT50 -->|yes| ERR["❌ Error — halt pipeline"]
-    GT50 -->|no| OUT["TestPlan\n(actions + validation field)"]
+
+    VAL --> GT50{"> 50% of selectors\nunknown?"}
+    GT50 -->|yes| ERR2(["❌ Error — likely hallucination\nhalt pipeline"])
+    GT50 -->|no| OUT[/"TestPlan\nactions[] + validation{}"/]
 ```
 
 **Pass 1 — Deterministic resolution**

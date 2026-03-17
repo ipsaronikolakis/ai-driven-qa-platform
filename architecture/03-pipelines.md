@@ -12,47 +12,72 @@ This document explains the two main pipelines — Generate and Heal — end-to-e
 
 ```mermaid
 flowchart TD
-    FE["scenarios/*.feature"] --> S1
+    FE[("scenarios/\n*.feature")]
+    START(["npm run pipeline\nor CI push"])
+    START --> FE
+
+    FE --> S1
 
     subgraph S1 ["Stage 1 — Parse"]
-        P1["parseAllScenarios()"] --> P2["lintScenario()\n→ lint-log.ndjson"]
+        P1["parseAllScenarios()"] --> P2["lintScenario()"]
+        P2 --> P3[("lint-log.ndjson")]
     end
 
     S1 --> CHK2{"Cache hit?\nstage2-page-model.json"}
-    CHK2 -->|"yes (no --fresh)"| S2HIT["[CACHE HIT]\nload PageModel"]
-    CHK2 -->|no| S2RUN
+    CHK2 -->|"✅ yes"| S2HIT(["CACHE HIT\nload PageModel"])
+    CHK2 -->|"❌ no"| S2RUN
 
     subgraph S2RUN ["Stage 2 — Explore"]
-        E1["headless Chromium\nexploreWithScript()"] --> E2["capturePageElements()\n(selector priority chain)"] --> E3["mergePageModels()"]
+        E1["headless Chromium\nexploreWithScript()"]
+        E2["capturePageElements()\nselector priority chain"]
+        E3["mergePageModels()"]
+        E1 --> E2 --> E3
     end
 
-    S2HIT & E3 --> PM["PageModel\n(output/stage2-page-model.json)"]
+    S2HIT & E3 --> PM[("stage2-page-model.json")]
 
     PM --> CHK3{"Cache hit?\nstage3-slug.json"}
-    CHK3 -->|"yes (no --fresh)"| S3HIT["[CACHE HIT]\nload TestPlan"]
-    CHK3 -->|no| S3RUN
+    CHK3 -->|"✅ yes"| S3HIT(["CACHE HIT\nload TestPlan"])
+    CHK3 -->|"❌ no"| S3RUN
 
     subgraph S3RUN ["Stage 3 — Plan (per scenario)"]
-        PL1{"All steps\nin vocab?"} -->|yes| PL2["Deterministic\nresolver"]
-        PL1 -->|no| PL3["Gemini 2.5 Flash\nLLM fallback"]
-        PL2 & PL3 --> PL4["validatePlan()"]
+        PL1{"All steps\nin vocab?"}
+        PL2["Deterministic\nresolver"]
+        PL3["Gemini 2.5 Flash\nLLM fallback"]
+        PL4["validatePlan()"]
+        PL1 -->|yes| PL2
+        PL1 -->|no| PL3
+        PL2 & PL3 --> PL4
     end
 
-    S3HIT & PL4 --> TP["TestPlan\n(output/stage3-slug.json)"]
+    S3HIT & PL4 --> TP[("stage3-slug.json\nTestPlan")]
 
     subgraph S4 ["Stage 4 — Generate"]
-        TP --> G1["generateSpecFile()"] --> G2["syntax check\nts.transpileModule()"] --> G3["generated/slug.spec.ts"]
+        G1["generateSpecFile()"]
+        G2{"syntax check\nts.transpileModule()"}
+        G3[("generated/\nslug.spec.ts")]
+        G1 --> G2
+        G2 -->|"✅ valid"| G3
+        G2 -->|"❌ invalid"| GERR(["Error — halt"])
     end
+
+    TP --> G1
 
     subgraph S5 ["Stage 5 — Run"]
-        G3 --> R1["npx playwright test"] --> R2["playwright-results.json"]
-        R2 --> R3["analyzeFailures()\n→ failure-analysis.json"]
-        R2 --> R4["updateSelectorHealth()\n→ selector-health.json"]
+        R1["npx playwright test"]
+        R2[("playwright-results.json")]
+        R3[("failure-analysis.json")]
+        R4[("selector-health.json")]
+        R1 --> R2
+        R2 --> R3
+        R2 --> R4
     end
 
+    G3 --> R1
+
     R2 --> END{"All specs\npassed?"}
-    END -->|yes| PASS["✅ exit 0"]
-    END -->|no| FAIL["❌ exit 1"]
+    END -->|yes| PASS(["✅ exit 0"])
+    END -->|no| FAIL(["❌ exit 1"])
 ```
 
 The following walkthrough uses a concrete example: a login scenario running against `the-internet.herokuapp.com`.
